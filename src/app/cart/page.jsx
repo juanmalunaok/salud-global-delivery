@@ -11,8 +11,17 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { createOrder } from '@/lib/firestore'
-import { ShoppingBag, Trash2, Plus, Minus, ChevronLeft, FileText } from 'lucide-react'
+import { ShoppingBag, Trash2, Plus, Minus, ChevronLeft, FileText, MapPin, Truck, Store } from 'lucide-react'
 import toast from 'react-hot-toast'
+
+const BRANCHES = [
+  { value: 'ac', label: 'AC' },
+  { value: 'juncal', label: 'Juncal' },
+  { value: 'fondo', label: 'Fondo' },
+  { value: 'libertador', label: 'Libertador' },
+  { value: 'cervino', label: 'Cerviño' },
+  { value: 'santa_fe', label: 'Santa Fe' },
+]
 
 function formatPrice(n) {
   return n.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 })
@@ -24,9 +33,15 @@ function CartContent() {
   const router = useRouter()
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [deliveryType, setDeliveryType] = useState('delivery')
+  const [branch, setBranch] = useState('')
 
   const handleConfirm = async () => {
     if (items.length === 0) return
+    if (deliveryType === 'pickup' && !branch) {
+      toast.error('Seleccioná una sucursal para el retiro.')
+      return
+    }
     setSubmitting(true)
     try {
       await createOrder(user.uid, {
@@ -35,6 +50,8 @@ function CartContent() {
         customerPhone: userDoc?.phone || '',
         customerAddress: userDoc?.address || '',
         customerNotes: notes,
+        deliveryType,
+        branch: deliveryType === 'pickup' ? branch : null,
         items: items.map((i) => ({
           productId: i.productId,
           name: i.name,
@@ -115,6 +132,62 @@ function CartContent() {
           </div>
         ))}
 
+        {/* Delivery type */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+          <p className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-gray-400" />
+            ¿Cómo recibís tu pedido?
+          </p>
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <button
+              type="button"
+              onClick={() => { setDeliveryType('delivery'); setBranch('') }}
+              className={`flex flex-col items-center gap-1.5 py-3 px-4 rounded-xl border-2 transition-all text-sm font-medium ${
+                deliveryType === 'delivery'
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-gray-200 text-gray-500 hover:border-gray-300'
+              }`}
+            >
+              <Truck className="w-5 h-5" />
+              Delivery a domicilio
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeliveryType('pickup')}
+              className={`flex flex-col items-center gap-1.5 py-3 px-4 rounded-xl border-2 transition-all text-sm font-medium ${
+                deliveryType === 'pickup'
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-gray-200 text-gray-500 hover:border-gray-300'
+              }`}
+            >
+              <Store className="w-5 h-5" />
+              Retiro en sucursal
+            </button>
+          </div>
+
+          {deliveryType === 'pickup' && (
+            <div>
+              <p className="text-xs font-medium text-gray-600 mb-2">Elegí la sucursal:</p>
+              <div className="grid grid-cols-3 gap-2">
+                {BRANCHES.map((b) => (
+                  <button
+                    key={b.value}
+                    type="button"
+                    onClick={() => setBranch(b.value)}
+                    className={`py-2 px-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                      branch === b.value
+                        ? 'border-primary bg-primary text-white'
+                        : 'border-gray-200 text-gray-600 hover:border-primary hover:text-primary'
+                    }`}
+                  >
+                    {b.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Notes */}
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -155,8 +228,12 @@ function CartContent() {
               <span className="text-gray-900">{formatPrice(subtotal)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Delivery</span>
-              <span className="text-gray-500 italic">A coordinar</span>
+              <span className="text-gray-500">Entrega</span>
+              <span className="text-gray-700 font-medium">
+                {deliveryType === 'pickup'
+                  ? `Retiro en ${BRANCHES.find(b => b.value === branch)?.label || '—'}`
+                  : 'Delivery · A coordinar'}
+              </span>
             </div>
           </div>
 

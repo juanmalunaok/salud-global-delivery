@@ -11,8 +11,10 @@ import { getOrder, updateOrderStatus, updateOrder } from '@/lib/firestore'
 import {
   ChevronLeft, User, Phone, MapPin, Mail, MessageSquare,
   Link as LinkIcon, CheckCircle, Package, Truck, Star, XCircle,
-  Save, FileText
+  Save, FileText, Store
 } from 'lucide-react'
+
+const BRANCH_LABELS = { ac: 'AC', juncal: 'Juncal', fondo: 'Fondo', libertador: 'Libertador', cervino: 'Cerviño', santa_fe: 'Santa Fe' }
 import toast from 'react-hot-toast'
 
 function formatPrice(n) {
@@ -369,6 +371,19 @@ export default function AdminOrderDetail() {
                 <div>
                   <p className="text-xs text-gray-500">Dirección</p>
                   <p className="text-sm text-gray-900">{order.customerAddress || '—'}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Store className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-xs text-gray-500">Tipo de entrega</p>
+                  {order.deliveryType === 'pickup' ? (
+                    <p className="text-sm font-semibold text-primary">
+                      Retiro en sucursal · {BRANCH_LABELS[order.branch] || order.branch}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-900">Delivery a domicilio</p>
+                  )}
                 </div>
               </div>
             </div>

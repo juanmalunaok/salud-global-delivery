@@ -10,7 +10,9 @@ import OrderStatusBadge from '@/components/OrderStatusBadge'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/contexts/AuthContext'
 import { subscribeToUserOrders } from '@/lib/firestore'
-import { Package, ChevronDown, ChevronUp, ExternalLink, ShoppingBag } from 'lucide-react'
+import { Package, ChevronDown, ChevronUp, ExternalLink, ShoppingBag, Store, Truck } from 'lucide-react'
+
+const BRANCH_LABELS = { ac: 'AC', juncal: 'Juncal', fondo: 'Fondo', libertador: 'Libertador', cervino: 'Cerviño', santa_fe: 'Santa Fe' }
 
 function formatPrice(n) {
   return n.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 })
@@ -114,12 +116,23 @@ function OrderCard({ order }) {
               <p className="text-sm text-gray-700">{order.customerNotes}</p>
             </div>
           )}
-          {order.customerAddress && (
-            <div className="mt-2 p-3 bg-gray-50 rounded-xl">
-              <p className="text-xs text-gray-500 font-medium mb-1">Dirección de entrega:</p>
-              <p className="text-sm text-gray-700">{order.customerAddress}</p>
-            </div>
-          )}
+          <div className="mt-2 p-3 bg-gray-50 rounded-xl flex items-center gap-2">
+            {order.deliveryType === 'pickup' ? (
+              <>
+                <Store className="w-4 h-4 text-primary flex-shrink-0" />
+                <p className="text-sm text-gray-700 font-medium">
+                  Retiro en sucursal · <span className="text-primary">{BRANCH_LABELS[order.branch] || order.branch}</span>
+                </p>
+              </>
+            ) : (
+              <>
+                <Truck className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <p className="text-sm text-gray-700">
+                  Delivery a domicilio{order.customerAddress ? ` · ${order.customerAddress}` : ''}
+                </p>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

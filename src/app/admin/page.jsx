@@ -6,7 +6,9 @@ import OrderStatusBadge from '@/components/OrderStatusBadge'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import Modal from '@/components/Modal'
 import { subscribeToAllOrders, seedProducts, getAllProducts } from '@/lib/firestore'
-import { Package, Clock, CreditCard, CheckCircle, RefreshCw, Database, DollarSign } from 'lucide-react'
+import { Package, Clock, CreditCard, CheckCircle, RefreshCw, Database, DollarSign, Store } from 'lucide-react'
+
+const BRANCH_LABELS = { ac: 'AC', juncal: 'Juncal', fondo: 'Fondo', libertador: 'Libertador', cervino: 'Cerviño', santa_fe: 'Santa Fe' }
 import toast from 'react-hot-toast'
 
 function formatPrice(n) {
@@ -206,6 +208,12 @@ export default function AdminDashboard() {
                       <div>
                         <p className="text-sm font-medium text-gray-900">{order.customerName || '—'}</p>
                         <p className="text-xs text-gray-500">{order.customerPhone || order.customerEmail || ''}</p>
+                        {order.deliveryType === 'pickup' && (
+                          <span className="inline-flex items-center gap-1 mt-1 text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                            <Store className="w-3 h-3" />
+                            Retiro · {BRANCH_LABELS[order.branch] || order.branch}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-5 py-4 hidden sm:table-cell">
