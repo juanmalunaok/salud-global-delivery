@@ -9,8 +9,9 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import OrderStatusBadge from '@/components/OrderStatusBadge'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/contexts/AuthContext'
-import { subscribeToUserOrders } from '@/lib/firestore'
-import { Package, ChevronDown, ChevronUp, ExternalLink, ShoppingBag, Store, Truck, CalendarClock } from 'lucide-react'
+import { subscribeToUserOrders, updateOrder, ADMIN_EMAIL } from '@/lib/firestore'
+import { Package, ChevronDown, ChevronUp, ExternalLink, ShoppingBag, Store, Truck, CalendarClock, Mail, CheckCircle2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 const BRANCH_LABELS = { ac: 'AC', juncal: 'Juncal', fondo: 'Fondo', libertador: 'Libertador', cervino: 'Cerviño', santa_fe: 'Santa Fe' }
 
@@ -32,6 +33,20 @@ function formatDate(ts) {
 
 function OrderCard({ order }) {
   const [expanded, setExpanded] = useState(false)
+  const [markingShared, setMarkingShared] = useState(false)
+
+  const handleMarkShared = async (e) => {
+    e.stopPropagation()
+    setMarkingShared(true)
+    try {
+      await updateOrder(order.id, { recetaCompartida: true })
+      toast.success('¡Gracias! La farmacia validará tu receta pronto.')
+    } catch {
+      toast.error('Error al confirmar. Intentá de nuevo.')
+    } finally {
+      setMarkingShared(false)
+    }
+  }
 
   return (
     <div className={`bg-white rounded-2xl border overflow-hidden transition-all ${
@@ -70,6 +85,39 @@ function OrderCard({ order }) {
           </div>
         </div>
 
+        {/* Recipe CTA */}
+        {order.status === 'esperando_receta' && (
+          <div className="mx-5 mb-4 p-3 bg-orange-50 border border-orange-200 rounded-xl">
+            {!order.recetaCompartida ? (
+              <>
+                <p className="text-sm font-medium text-orange-800 mb-1 flex items-center gap-1.5">
+                  <Mail className="w-4 h-4" /> Enviá tu receta por email
+                </p>
+                <p className="text-xs text-orange-700 mb-3">
+                  Mandá una foto de tu receta a{' '}
+                  <a href={`mailto:${ADMIN_EMAIL}`} className="font-semibold underline" onClick={e => e.stopPropagation()}>
+                    {ADMIN_EMAIL}
+                  </a>
+                  {' '}con el número de pedido <strong>{order.orderNumber}</strong>.
+                </p>
+                <button
+                  onClick={handleMarkShared}
+                  disabled={markingShared}
+                  className="w-full flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  Ya compartí el mail de la receta
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-orange-800">
+                <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                <span>Receta enviada — esperando validación de la farmacia.</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Payment CTA */}
         {order.status === 'presupuestado' && order.paymentLink && (
           <div className="mx-5 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
@@ -106,9 +154,17 @@ function OrderCard({ order }) {
               </div>
             ))}
           </div>
-          <div className="border-t border-gray-100 pt-3 flex justify-between font-semibold">
-            <span>Total</span>
-            <span className="text-primary">{formatPrice(order.total)}</span>
+          <div className="border-t border-gray-100 pt-3 space-y-1">
+            {order.discountPercent > 0 && (
+              <div className="flex justify-between text-sm text-green-700">
+                <span>Descuento obra social ({order.discountPercent}%)</span>
+                <span>- {formatPrice(order.discountAmount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-semibold">
+              <span>Total</span>
+              <span className="text-primary">{formatPrice(order.finalTotal ?? order.total)}</span>
+            </div>
           </div>
           {order.customerNotes && (
             <div className="mt-3 p-3 bg-gray-50 rounded-xl">

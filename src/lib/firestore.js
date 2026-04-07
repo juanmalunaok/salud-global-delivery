@@ -162,6 +162,8 @@ export async function createOrder(userId, orderData) {
     }
   }
 
+  const initialStatus = orderData.orderType === 'con_receta' ? 'esperando_receta' : 'pendiente'
+
   const ref = await addDoc(collection(db, 'orders'), {
     ...orderData,
     userId,
@@ -169,7 +171,8 @@ export async function createOrder(userId, orderData) {
     orderNum,
     pickupDate: pickupDateISO,
     pickupDateLabel,
-    status: 'pendiente',
+    status: initialStatus,
+    recetaCompartida: false,
     paymentLink: '',
     adminNotes: '',
     paidAt: null,
@@ -214,6 +217,37 @@ export async function updateOrderStatus(id, status, extra = {}) {
 
 export async function updateOrder(id, data) {
   await updateDoc(doc(db, 'orders', id), { ...data, updatedAt: serverTimestamp() })
+}
+
+// ───────────────────────────────────────────────
+// OBRAS SOCIALES
+// ───────────────────────────────────────────────
+
+export async function getAllObrasSociales() {
+  const q = query(collection(db, 'obrasSociales'), orderBy('nombre', 'asc'))
+  const snap = await getDocs(q)
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+}
+
+export async function getObraSocialDiscount(nombre) {
+  if (!nombre) return null
+  const all = await getAllObrasSociales()
+  const match = all.find(
+    (os) => os.nombre.toLowerCase().trim() === nombre.toLowerCase().trim() && os.active !== false
+  )
+  return match || null
+}
+
+export async function createObraSocial(data) {
+  return addDoc(collection(db, 'obrasSociales'), { ...data, createdAt: serverTimestamp() })
+}
+
+export async function updateObraSocial(id, data) {
+  await updateDoc(doc(db, 'obrasSociales', id), data)
+}
+
+export async function deleteObraSocial(id) {
+  await deleteDoc(doc(db, 'obrasSociales', id))
 }
 
 // ───────────────────────────────────────────────

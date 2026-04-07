@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -10,8 +10,8 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { createOrder, getPickupDate } from '@/lib/firestore'
-import { ShoppingBag, Trash2, Plus, Minus, ChevronLeft, FileText, MapPin, Truck, Store, CalendarClock, Pill, ClipboardList } from 'lucide-react'
+import { createOrder, getPickupDate, getObraSocialDiscount } from '@/lib/firestore'
+import { ShoppingBag, Trash2, Plus, Minus, ChevronLeft, FileText, MapPin, Truck, Store, CalendarClock, Pill, ClipboardList, Tag } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const BRANCHES = [
@@ -37,8 +37,19 @@ function CartContent() {
   const [branch, setBranch] = useState('')
   const [orderType, setOrderType] = useState('venta_libre')
   const [customPickupDate, setCustomPickupDate] = useState('')
+  const [obraSocialDiscount, setObraSocialDiscount] = useState(null)
 
   const todayStr = new Date().toISOString().split('T')[0]
+
+  useEffect(() => {
+    if (userDoc?.obraSocial) {
+      getObraSocialDiscount(userDoc.obraSocial).then(setObraSocialDiscount)
+    }
+  }, [userDoc?.obraSocial])
+
+  const discountPct = obraSocialDiscount?.descuento ?? 0
+  const discountAmount = Math.round(total * discountPct / 100)
+  const finalTotal = total - discountAmount
 
   const handleConfirm = async () => {
     if (items.length === 0) return
@@ -72,6 +83,9 @@ function CartContent() {
         })),
         subtotal,
         total,
+        discountPercent: discountPct,
+        discountAmount,
+        finalTotal,
       })
       clearCart()
       toast.success('¡Pedido confirmado! Te avisamos cuando esté listo el presupuesto.')
@@ -300,11 +314,20 @@ function CartContent() {
             ))}
           </div>
 
-          <div className="py-4 border-b border-gray-100">
-            <div className="flex justify-between text-sm mb-1">
+          <div className="py-4 border-b border-gray-100 space-y-1.5">
+            <div className="flex justify-between text-sm">
               <span className="text-gray-500">Subtotal</span>
               <span className="text-gray-900">{formatPrice(subtotal)}</span>
             </div>
+            {discountPct > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="flex items-center gap-1 text-green-700 font-medium">
+                  <Tag className="w-3.5 h-3.5" />
+                  Descuento obra social ({discountPct}%)
+                </span>
+                <span className="text-green-700 font-semibold">- {formatPrice(discountAmount)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Entrega</span>
               <span className="text-gray-700 font-medium">
@@ -315,9 +338,21 @@ function CartContent() {
             </div>
           </div>
 
+          {discountPct > 0 && (
+            <div className="mt-3 px-3 py-2 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 flex items-center gap-2">
+              <Tag className="w-3.5 h-3.5 flex-shrink-0" />
+              Descuento {obraSocialDiscount.nombre} ({discountPct}% OFF) aplicado automáticamente.
+            </div>
+          )}
+
           <div className="flex justify-between items-center py-4">
             <span className="font-semibold text-gray-900">Total estimado</span>
-            <span className="text-xl font-bold text-primary">{formatPrice(total)}</span>
+            <div className="text-right">
+              {discountPct > 0 && (
+                <p className="text-sm text-gray-400 line-through">{formatPrice(total)}</p>
+              )}
+              <span className="text-xl font-bold text-primary">{formatPrice(finalTotal)}</span>
+            </div>
           </div>
 
           <p className="text-xs text-gray-400 mb-4">

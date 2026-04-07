@@ -1,6 +1,16 @@
 import { CheckCircle, Clock, XCircle } from 'lucide-react'
 
-const TIMELINE_STEPS = [
+const TIMELINE_STEPS_RECETA = [
+  { key: 'esperando_receta', label: 'Esperando receta' },
+  { key: 'receta_validada', label: 'Receta validada' },
+  { key: 'presupuestado', label: 'Presupuesto enviado' },
+  { key: 'pagado', label: 'Pago confirmado' },
+  { key: 'en_preparacion', label: 'En preparación' },
+  { key: 'listo', label: 'Listo para despacho' },
+  { key: 'entregado', label: 'Entregado' },
+]
+
+const TIMELINE_STEPS_NORMAL = [
   { key: 'pendiente', label: 'Pedido recibido' },
   { key: 'presupuestado', label: 'Presupuesto enviado' },
   { key: 'pagado', label: 'Pago confirmado' },
@@ -9,7 +19,18 @@ const TIMELINE_STEPS = [
   { key: 'entregado', label: 'Entregado' },
 ]
 
-const STATUS_ORDER = {
+const STATUS_ORDER_RECETA = {
+  esperando_receta: 0,
+  receta_validada: 1,
+  presupuestado: 2,
+  pagado: 3,
+  en_preparacion: 4,
+  listo: 5,
+  entregado: 6,
+  cancelado: -1,
+}
+
+const STATUS_ORDER_NORMAL = {
   pendiente: 0,
   presupuestado: 1,
   pagado: 2,
@@ -32,6 +53,9 @@ function formatTs(ts) {
 }
 
 export default function OrderTimeline({ status, createdAt, updatedAt }) {
+  const isReceta = status === 'esperando_receta' || status === 'receta_validada'
+  const TIMELINE_STEPS = isReceta ? TIMELINE_STEPS_RECETA : TIMELINE_STEPS_NORMAL
+  const STATUS_ORDER = isReceta ? STATUS_ORDER_RECETA : STATUS_ORDER_NORMAL
   const currentIndex = STATUS_ORDER[status] ?? 0
   const isCancelled = status === 'cancelado'
 

@@ -1,4 +1,8 @@
 export const STATUS_CONFIG = {
+  esperando_receta: {
+    label: 'Esperando receta',
+    className: 'bg-orange-100 text-orange-800 border border-orange-300',
+  },
   pendiente: {
     label: 'Pendiente',
     className: 'bg-yellow-100 text-yellow-800 border border-yellow-300',

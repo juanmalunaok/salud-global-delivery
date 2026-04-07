@@ -193,6 +193,12 @@ export default function AdminOrderDetail() {
     }
   }
 
+  const handleValidateReceta = () =>
+    doAction(async () => {
+      await updateOrderStatus(id, 'pendiente')
+      toast.success('Receta validada. Pedido pasa a pendiente.')
+    })
+
   const handleSendBudget = () => {
     if (!paymentLink.trim()) {
       toast.error('Ingresá el link de MercadoPago antes de continuar.')
@@ -267,6 +273,7 @@ export default function AdminOrderDetail() {
     )
   }
 
+  const isEsperandoReceta = order.status === 'esperando_receta'
   const isPendiente = order.status === 'pendiente'
   const isPresupuestado = order.status === 'presupuestado'
   const isPagado = order.status === 'pagado'
@@ -346,9 +353,17 @@ export default function AdminOrderDetail() {
                 </div>
               ))}
             </div>
-            <div className="border-t border-gray-100 pt-4 mt-2 flex justify-between font-bold">
-              <span>Total del pedido</span>
-              <span className="text-primary text-lg">{formatPrice(order.total)}</span>
+            <div className="border-t border-gray-100 pt-4 mt-2 space-y-1">
+              {order.discountPercent > 0 && (
+                <div className="flex justify-between text-sm text-green-700">
+                  <span>Descuento obra social ({order.discountPercent}%)</span>
+                  <span>- {formatPrice(order.discountAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-bold">
+                <span>Total del pedido</span>
+                <span className="text-primary text-lg">{formatPrice(order.finalTotal ?? order.total)}</span>
+              </div>
             </div>
             {order.customerNotes && (
               <div className="mt-4 p-3 bg-amber-50 border border-amber-100 rounded-xl">
@@ -362,6 +377,38 @@ export default function AdminOrderDetail() {
           {!isClosed && (
             <div className="bg-white rounded-2xl border border-gray-100 p-5">
               <h2 className="font-semibold text-gray-900 mb-4 font-heading">Acciones del pedido</h2>
+
+              {isEsperandoReceta && (
+                <div className="space-y-4">
+                  {order.recetaCompartida ? (
+                    <>
+                      <div className="p-3 bg-green-50 border border-green-200 rounded-xl flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-semibold text-green-800">El cliente confirmó que envió la receta por email.</p>
+                          <p className="text-xs text-green-700 mt-0.5">Revisá tu casilla y validá la receta para continuar.</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleValidateReceta}
+                        disabled={actionLoading}
+                        className="w-full bg-primary hover:bg-primary-light disabled:bg-gray-300 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                      >
+                        {actionLoading ? <LoadingSpinner size="sm" className="border-white/30 border-t-white" /> : <CheckCircle className="w-5 h-5" />}
+                        Receta validada — continuar pedido
+                      </button>
+                    </>
+                  ) : (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
+                      <FileText className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-amber-800">Esperando que el cliente envíe la receta por email.</p>
+                        <p className="text-xs text-amber-700 mt-0.5">El cliente debe enviar la foto de la receta a tu casilla antes de continuar.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {isPendiente && (
                 <div className="space-y-4">
