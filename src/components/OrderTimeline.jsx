@@ -52,8 +52,8 @@ function formatTs(ts) {
   })
 }
 
-export default function OrderTimeline({ status, createdAt, updatedAt }) {
-  const isReceta = status === 'esperando_receta' || status === 'receta_validada'
+export default function OrderTimeline({ status, orderType, createdAt, updatedAt }) {
+  const isReceta = orderType === 'con_receta' || status === 'esperando_receta' || status === 'receta_validada'
   const TIMELINE_STEPS = isReceta ? TIMELINE_STEPS_RECETA : TIMELINE_STEPS_NORMAL
   const STATUS_ORDER = isReceta ? STATUS_ORDER_RECETA : STATUS_ORDER_NORMAL
   const currentIndex = STATUS_ORDER[status] ?? 0
