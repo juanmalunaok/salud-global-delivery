@@ -277,10 +277,11 @@ export default function AdminOrderDetail() {
 
   const handleCancel = () =>
     doAction(async () => {
-      await updateOrderStatus(id, 'cancelado', {
-        cancelReason: cancelReason.trim() || null,
-        hadPayment: order.status === 'pagado' || order.pagoPendienteConfirmacion,
-      })
+      const extra = {
+        hadPayment: order.status === 'pagado' || !!order.pagoPendienteConfirmacion,
+      }
+      if (cancelReason.trim()) extra.cancelReason = cancelReason.trim()
+      await updateOrderStatus(id, 'cancelado', extra)
       setCancelModal(false)
       setCancelReason('')
       toast.success('Pedido cancelado.')
