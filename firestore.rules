@@ -31,6 +31,11 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ─── Meta (contadores internos) ──────────────────────────────
+    match /meta/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
     // ─── Users ───────────────────────────────────────────────────
     match /users/{userId} {
       allow read: if isAdmin() || isOwner(userId);
