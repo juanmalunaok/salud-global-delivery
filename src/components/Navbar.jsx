@@ -36,14 +36,16 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
         {/* Logo */}
         <Link href="/" className="flex items-center flex-shrink-0">
-          <Image
-            src="/logo.png"
-            alt="Salud Global Farmacias"
-            width={160}
-            height={56}
-            className="h-12 w-auto object-contain brightness-0 invert"
-            priority
-          />
+          <div className="bg-white rounded-xl px-3 py-1">
+            <Image
+              src="/logo.png"
+              alt="Salud Global Farmacias"
+              width={150}
+              height={48}
+              className="h-10 w-auto object-contain"
+              priority
+            />
+          </div>
         </Link>
 
         {/* Right actions */}
