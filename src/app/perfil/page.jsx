@@ -8,12 +8,12 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/contexts/AuthContext'
 import { updateUserDoc } from '@/lib/firestore'
-import { User, Phone, MapPin, Mail, Save, CheckCircle } from 'lucide-react'
+import { User, Phone, MapPin, Mail, Save, CreditCard, Cross } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 function PerfilContent() {
   const { user, userDoc, refreshUserDoc } = useAuth()
-  const [form, setForm] = useState({ name: '', phone: '', address: '' })
+  const [form, setForm] = useState({ name: '', phone: '', address: '', obraSocial: '', documento: '' })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -22,6 +22,8 @@ function PerfilContent() {
         name: userDoc.name || '',
         phone: userDoc.phone || '',
         address: userDoc.address || '',
+        obraSocial: userDoc.obraSocial || '',
+        documento: userDoc.documento || '',
       })
     }
   }, [userDoc])
@@ -33,6 +35,8 @@ function PerfilContent() {
         name: form.name.trim(),
         phone: form.phone.trim(),
         address: form.address.trim(),
+        obraSocial: form.obraSocial.trim(),
+        documento: form.documento.trim(),
       })
       await refreshUserDoc()
       toast.success('Perfil actualizado correctamente.')
@@ -107,6 +111,34 @@ function PerfilContent() {
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               placeholder="Ej: 11 1234-5678"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+              <CreditCard className="w-4 h-4 text-gray-400" />
+              DNI / Documento
+            </label>
+            <input
+              type="text"
+              value={form.documento}
+              onChange={(e) => setForm({ ...form, documento: e.target.value })}
+              placeholder="Número de documento"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+              <Cross className="w-4 h-4 text-gray-400" />
+              Obra social
+            </label>
+            <input
+              type="text"
+              value={form.obraSocial}
+              onChange={(e) => setForm({ ...form, obraSocial: e.target.value })}
+              placeholder="Ej: OSDE, PAMI, Swiss Medical... o &quot;Particular&quot;"
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
           </div>

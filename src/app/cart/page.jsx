@@ -57,6 +57,8 @@ function CartContent() {
         customerEmail: user.email || '',
         customerPhone: userDoc?.phone || '',
         customerAddress: userDoc?.address || '',
+        customerDocumento: userDoc?.documento || '',
+        customerObraSocial: userDoc?.obraSocial || '',
         customerNotes: notes,
         deliveryType,
         orderType,

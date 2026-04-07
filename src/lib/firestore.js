@@ -48,6 +48,9 @@ export async function createUserDoc(uid, { email, name, photoURL }) {
     role,
     phone: '',
     address: '',
+    obraSocial: '',
+    documento: '',
+    profileComplete: role === 'admin', // admin no necesita completar perfil
     createdAt: serverTimestamp(),
   })
   return role

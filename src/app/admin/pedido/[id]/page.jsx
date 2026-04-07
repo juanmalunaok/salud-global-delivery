@@ -495,6 +495,24 @@ export default function AdminOrderDetail() {
                   <p className="text-sm text-gray-900">{order.customerAddress || '—'}</p>
                 </div>
               </div>
+              {order.customerDocumento && (
+                <div className="flex items-start gap-2">
+                  <span className="text-gray-400 mt-0.5 flex-shrink-0 text-xs font-bold w-4 text-center">ID</span>
+                  <div>
+                    <p className="text-xs text-gray-500">DNI / Documento</p>
+                    <p className="text-sm text-gray-900">{order.customerDocumento}</p>
+                  </div>
+                </div>
+              )}
+              {order.customerObraSocial && (
+                <div className="flex items-start gap-2">
+                  <span className="text-gray-400 mt-0.5 flex-shrink-0 text-xs font-bold w-4 text-center">OS</span>
+                  <div>
+                    <p className="text-xs text-gray-500">Obra social</p>
+                    <p className="text-sm text-gray-900">{order.customerObraSocial}</p>
+                  </div>
+                </div>
+              )}
               <div className="flex items-start gap-2">
                 <Pill className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                 <div>

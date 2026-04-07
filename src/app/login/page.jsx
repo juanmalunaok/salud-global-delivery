@@ -16,6 +16,8 @@ export default function LoginPage() {
     if (!loading && user && userDoc) {
       if (userDoc.role === 'admin') {
         router.replace('/admin')
+      } else if (!userDoc.profileComplete) {
+        router.replace('/completar-perfil')
       } else {
         router.replace('/')
       }
