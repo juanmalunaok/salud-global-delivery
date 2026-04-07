@@ -34,9 +34,10 @@ function formatDate(ts) {
 function OrderCard({ order }) {
   const [expanded, setExpanded] = useState(false)
   const [markingShared, setMarkingShared] = useState(false)
+  const [paymentModal, setPaymentModal] = useState(false)
+  const [confirmingPayment, setConfirmingPayment] = useState(false)
 
-  const handleMarkShared = async (e) => {
-    e.stopPropagation()
+  const handleMarkShared = async () => {
     setMarkingShared(true)
     try {
       await updateOrder(order.id, { recetaCompartida: true })
@@ -48,7 +49,58 @@ function OrderCard({ order }) {
     }
   }
 
+  const handleOpenPayment = () => {
+    window.open(order.paymentLink, '_blank', 'noopener,noreferrer')
+    setPaymentModal(true)
+  }
+
+  const handleConfirmPayment = async () => {
+    setConfirmingPayment(true)
+    try {
+      await updateOrder(order.id, { pagoPendienteConfirmacion: true })
+      setPaymentModal(false)
+      toast.success('¡Gracias! El equipo confirmará tu pago pronto.')
+    } catch {
+      toast.error('Error al confirmar. Intentá de nuevo.')
+    } finally {
+      setConfirmingPayment(false)
+    }
+  }
+
   return (
+    <>
+    {/* Payment confirmation modal */}
+    {paymentModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setPaymentModal(false)}>
+        <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ExternalLink className="w-6 h-6 text-blue-600" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 text-center font-heading mb-2">Completá tu pago</h3>
+          <p className="text-sm text-gray-500 text-center mb-1">
+            Se abrió MercadoPago en otra pestaña.
+          </p>
+          <p className="text-sm text-gray-500 text-center mb-6">
+            Una vez que realizaste el pago, avisanos tocando el botón de abajo y el equipo lo confirmará.
+          </p>
+          <button
+            onClick={handleConfirmPayment}
+            disabled={confirmingPayment}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 mb-3"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            Ya realicé el pago
+          </button>
+          <button
+            onClick={() => setPaymentModal(false)}
+            className="w-full text-sm text-gray-400 hover:text-gray-600 py-2 transition-colors"
+          >
+            Todavía no pagué
+          </button>
+        </div>
+      </div>
+    )}
+
     <div className={`bg-white rounded-2xl border overflow-hidden transition-all ${
       order.status === 'pendiente' ? 'border-yellow-300 shadow-yellow-50 shadow-md' : 'border-gray-100 shadow-sm'
     }`}>
@@ -84,59 +136,65 @@ function OrderCard({ order }) {
             )}
           </div>
         </div>
-
-        {/* Recipe CTA */}
-        {order.status === 'esperando_receta' && (
-          <div className="mx-5 mb-4 p-3 bg-orange-50 border border-orange-200 rounded-xl">
-            {!order.recetaCompartida ? (
-              <>
-                <p className="text-sm font-medium text-orange-800 mb-1 flex items-center gap-1.5">
-                  <Mail className="w-4 h-4" /> Enviá tu receta por email
-                </p>
-                <p className="text-xs text-orange-700 mb-3">
-                  Reenviá el mail de la receta a{' '}
-                  <a href={`mailto:${ADMIN_EMAIL}?subject=Receta pedido ${order.orderNumber}`} className="font-semibold underline" onClick={e => e.stopPropagation()}>
-                    {ADMIN_EMAIL}
-                  </a>
-                  {' '}poniendo en el asunto: <strong>Receta pedido {order.orderNumber}</strong>.
-                </p>
-                <button
-                  onClick={handleMarkShared}
-                  disabled={markingShared}
-                  className="w-full flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Ya compartí el mail de la receta
-                </button>
-              </>
-            ) : (
-              <div className="flex items-center gap-2 text-sm text-orange-800">
-                <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                <span>Receta enviada — esperando validación de la farmacia.</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Payment CTA */}
-        {order.status === 'presupuestado' && order.paymentLink && (
-          <div className="mx-5 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-            <p className="text-sm font-medium text-blue-800 mb-2">
-              ¡Tu presupuesto está listo! Hacé click para pagar.
-            </p>
-            <a
-              href={order.paymentLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Ir a pagar con MercadoPago
-            </a>
-          </div>
-        )}
       </button>
+
+      {/* Recipe CTA */}
+      {order.status === 'esperando_receta' && (
+        <div className="mx-5 mb-4 p-3 bg-orange-50 border border-orange-200 rounded-xl">
+          {!order.recetaCompartida ? (
+            <>
+              <p className="text-sm font-medium text-orange-800 mb-1 flex items-center gap-1.5">
+                <Mail className="w-4 h-4" /> Enviá tu receta por email
+              </p>
+              <p className="text-xs text-orange-700 mb-3">
+                Reenviá el mail de la receta a{' '}
+                <a href={`mailto:${ADMIN_EMAIL}?subject=Receta pedido ${order.orderNumber}`} className="font-semibold underline">
+                  {ADMIN_EMAIL}
+                </a>
+                {' '}poniendo en el asunto: <strong>Receta pedido {order.orderNumber}</strong>.
+              </p>
+              <button
+                onClick={handleMarkShared}
+                disabled={markingShared}
+                className="w-full flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Ya compartí el mail de la receta
+              </button>
+            </>
+          ) : (
+            <div className="flex items-center gap-2 text-sm text-orange-800">
+              <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+              <span>Receta enviada — esperando validación de la farmacia.</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Payment CTA */}
+      {order.status === 'presupuestado' && order.paymentLink && (
+        <div className="mx-5 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+          {order.pagoPendienteConfirmacion ? (
+            <div className="flex items-center gap-2 text-sm text-blue-800">
+              <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+              <span>Pago enviado — el equipo lo confirmará pronto.</span>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm font-medium text-blue-800 mb-2">
+                ¡Tu presupuesto está listo! Hacé click para pagar.
+              </p>
+              <button
+                onClick={handleOpenPayment}
+                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Ir a pagar con MercadoPago
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Expanded details */}
       {expanded && (
@@ -200,6 +258,7 @@ function OrderCard({ order }) {
         </div>
       )}
     </div>
+    </>
   )
 }
 
