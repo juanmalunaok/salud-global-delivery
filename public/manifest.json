@@ -1,0 +1,26 @@
+{
+  "name": "Salud Global Farmacias",
+  "short_name": "Salud Global",
+  "description": "Pedí tus medicamentos online. Delivery y retiro en sucursal.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1565C0",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "shopping"],
+  "lang": "es-AR"
+}

@@ -11,7 +11,7 @@ import { getOrder, updateOrderStatus, updateOrder } from '@/lib/firestore'
 import {
   ChevronLeft, User, Phone, MapPin, Mail,
   Link as LinkIcon, CheckCircle, Package, Truck, Star, XCircle,
-  Save, FileText, Store, Pill, Printer
+  Save, FileText, Store, Pill, Printer, MessageCircle
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -128,6 +128,18 @@ function printLabel(order) {
   w.document.close()
   w.focus()
   setTimeout(() => { w.print(); w.close() }, 300)
+}
+
+function getWhatsAppUrl(order) {
+  if (!order.customerPhone) return null
+  const raw = order.customerPhone.replace(/\D/g, '')
+  // If starts with 0, strip it; prefix Argentina country code
+  const normalized = raw.startsWith('0') ? '549' + raw.slice(1) : raw.startsWith('54') ? raw : '549' + raw
+  const branch = BRANCH_LABELS[order.branch] || order.branch || ''
+  const msg = order.deliveryType === 'pickup'
+    ? `Hola ${order.customerName || ''}, tu pedido ${order.orderNumber} está listo para retirar en sucursal ${branch}. ¡Gracias por elegir Salud Global!`
+    : `Hola ${order.customerName || ''}, tu pedido ${order.orderNumber} está en camino. ¡Gracias por elegir Salud Global!`
+  return `https://wa.me/${normalized}?text=${encodeURIComponent(msg)}`
 }
 
 function formatPrice(n) {
@@ -282,6 +294,17 @@ export default function AdminOrderDetail() {
           <p className="text-sm text-gray-500">Creado el {formatDate(order.createdAt)}</p>
         </div>
         <div className="flex items-center gap-2">
+          {getWhatsAppUrl(order) && (
+            <a
+              href={getWhatsAppUrl(order)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 border border-green-200 text-green-700 rounded-xl text-sm font-medium hover:bg-green-50 transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" />
+              WhatsApp
+            </a>
+          )}
           <button
             onClick={() => printLabel(order)}
             className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
@@ -485,7 +508,20 @@ export default function AdminOrderDetail() {
                 <Phone className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-xs text-gray-500">Teléfono</p>
-                  <p className="text-sm text-gray-900">{order.customerPhone || '—'}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-gray-900">{order.customerPhone || '—'}</p>
+                    {getWhatsAppUrl(order) && (
+                      <a
+                        href={getWhatsAppUrl(order)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-600 hover:text-green-700"
+                        title="Abrir WhatsApp"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex items-start gap-2">
