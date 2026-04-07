@@ -1,13 +1,15 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import CartDrawer from '@/components/CartDrawer'
 import ProductCard from '@/components/ProductCard'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { getProducts } from '@/lib/firestore'
-import { Search, Package, ChevronRight } from 'lucide-react'
+import AnnouncementModal from '@/components/AnnouncementModal'
+import AnnouncementBanner from '@/components/AnnouncementBanner'
+import { getProducts, getActiveAnnouncements } from '@/lib/firestore'
+import { Search, Package } from 'lucide-react'
 
 const CATEGORIES = [
   { value: '', label: 'Todos' },
@@ -36,17 +38,58 @@ function SkeletonCard() {
   )
 }
 
+const SEEN_KEY = 'sg_seen_announcements'
+
+function getSeenIds() {
+  try { return JSON.parse(sessionStorage.getItem(SEEN_KEY) || '[]') } catch { return [] }
+}
+function markSeen(id) {
+  try {
+    const seen = getSeenIds()
+    if (!seen.includes(id)) sessionStorage.setItem(SEEN_KEY, JSON.stringify([...seen, id]))
+  } catch {}
+}
+
 export default function CatalogPage() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
+  const [modalAnnouncement, setModalAnnouncement] = useState(null)
+  const [bannerAnnouncement, setBannerAnnouncement] = useState(null)
 
   useEffect(() => {
     getProducts()
       .then(setProducts)
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    getActiveAnnouncements().then((announcements) => {
+      const seen = getSeenIds()
+      for (const a of announcements) {
+        const alreadySeen = a.showOnce && seen.includes(a.id)
+        if (alreadySeen) continue
+        if (a.displayType === 'modal' || a.displayType === 'both') {
+          setModalAnnouncement(a)
+        }
+        if (a.displayType === 'banner' || a.displayType === 'both') {
+          setBannerAnnouncement(a)
+        }
+        break // mostrar solo el más reciente
+      }
+    })
+  }, [])
+
+  const closeModal = useCallback(() => {
+    if (modalAnnouncement?.showOnce) markSeen(modalAnnouncement.id)
+    setModalAnnouncement(null)
+  }, [modalAnnouncement])
+
+  const closeBanner = useCallback(() => {
+    if (bannerAnnouncement?.showOnce) markSeen(bannerAnnouncement.id)
+    setBannerAnnouncement(null)
+  }, [bannerAnnouncement])
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -61,7 +104,13 @@ export default function CatalogPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background-secondary">
+      {modalAnnouncement && (
+        <AnnouncementModal announcement={modalAnnouncement} onClose={closeModal} />
+      )}
       <Navbar />
+      {bannerAnnouncement && (
+        <AnnouncementBanner announcement={bannerAnnouncement} onClose={closeBanner} />
+      )}
       <CartDrawer />
 
       {/* Hero */}

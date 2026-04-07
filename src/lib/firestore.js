@@ -217,6 +217,41 @@ export async function updateOrder(id, data) {
 }
 
 // ───────────────────────────────────────────────
+// ANNOUNCEMENTS
+// ───────────────────────────────────────────────
+
+export async function getActiveAnnouncements() {
+  const q = query(
+    collection(db, 'announcements'),
+    where('active', '==', true),
+    orderBy('createdAt', 'desc')
+  )
+  const snap = await getDocs(q)
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+}
+
+export async function getAllAnnouncements() {
+  const q = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'))
+  const snap = await getDocs(q)
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+}
+
+export async function createAnnouncement(data) {
+  return addDoc(collection(db, 'announcements'), {
+    ...data,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export async function updateAnnouncement(id, data) {
+  await updateDoc(doc(db, 'announcements', id), data)
+}
+
+export async function deleteAnnouncement(id) {
+  await deleteDoc(doc(db, 'announcements', id))
+}
+
+// ───────────────────────────────────────────────
 // REALTIME LISTENERS
 // ───────────────────────────────────────────────
 
