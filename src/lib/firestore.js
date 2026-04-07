@@ -221,13 +221,11 @@ export async function updateOrder(id, data) {
 // ───────────────────────────────────────────────
 
 export async function getActiveAnnouncements() {
-  const q = query(
-    collection(db, 'announcements'),
-    where('active', '==', true),
-    orderBy('createdAt', 'desc')
-  )
+  const q = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'))
   const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .filter((a) => a.active === true)
 }
 
 export async function getAllAnnouncements() {
