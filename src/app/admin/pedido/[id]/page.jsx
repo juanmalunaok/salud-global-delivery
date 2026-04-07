@@ -9,13 +9,126 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import Modal from '@/components/Modal'
 import { getOrder, updateOrderStatus, updateOrder } from '@/lib/firestore'
 import {
-  ChevronLeft, User, Phone, MapPin, Mail, MessageSquare,
+  ChevronLeft, User, Phone, MapPin, Mail,
   Link as LinkIcon, CheckCircle, Package, Truck, Star, XCircle,
-  Save, FileText, Store, Pill
+  Save, FileText, Store, Pill, Printer
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 const BRANCH_LABELS = { ac: 'AC', juncal: 'Juncal', fondo: 'Fondo', libertador: 'Libertador', cervino: 'Cerviño', santa_fe: 'Santa Fe' }
-import toast from 'react-hot-toast'
+
+function printLabel(order) {
+  const formatPrice = (n) => n?.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }) ?? ''
+  const isPickup = order.deliveryType === 'pickup'
+  const isPrescription = order.orderType === 'con_receta'
+
+  const itemsHtml = (order.items || []).map(i =>
+    `<tr>
+      <td style="padding:2px 6px 2px 0;font-size:12px;">${i.name}</td>
+      <td style="padding:2px 0;font-size:12px;text-align:center;">x${i.quantity}</td>
+      <td style="padding:2px 0 2px 6px;font-size:12px;text-align:right;">${formatPrice(i.unitPrice * i.quantity)}</td>
+    </tr>`
+  ).join('')
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Etiqueta ${order.orderNumber}</title>
+  <style>
+    @page { size: 10cm 14cm; margin: 6mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+    body { width: 10cm; background: white; color: #000; }
+    .header { background: #1565C0; color: white; padding: 6px 10px; border-radius: 6px 6px 0 0; }
+    .order-num { font-size: 22px; font-weight: 900; letter-spacing: 1px; }
+    .brand { font-size: 10px; opacity: .8; margin-bottom: 2px; }
+    .badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; }
+    .badge-pickup { background:#e3f0ff; color:#1565C0; }
+    .badge-delivery { background:#e8f5e9; color:#2e7d32; }
+    .badge-rx { background:#fff3e0; color:#e65100; }
+    .badge-otc { background:#f3f4f6; color:#374151; }
+    .section { padding: 6px 10px; border-bottom: 1px dashed #ddd; }
+    .label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing:.5px; }
+    .value { font-size: 13px; font-weight: 600; margin-top: 1px; }
+    .value-lg { font-size: 15px; font-weight: 800; }
+    .row { display:flex; gap:8px; align-items:flex-start; }
+    .col { flex:1; }
+    table { width:100%; border-collapse:collapse; }
+    .total-row td { font-weight:700; font-size:13px; padding-top:4px; border-top:1px solid #000; }
+    .footer { padding:5px 10px; font-size:9px; color:#999; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand">Salud Global Farmacias</div>
+    <div class="order-num">${order.orderNumber}</div>
+  </div>
+
+  <div class="section">
+    <div class="row" style="margin-bottom:4px;">
+      <span class="badge ${isPickup ? 'badge-pickup' : 'badge-delivery'}">${isPickup ? '📦 Retiro en sucursal' : '🚚 Delivery'}</span>
+      <span class="badge ${isPrescription ? 'badge-rx' : 'badge-otc'}">${isPrescription ? '💊 Con receta' : 'Venta libre'}</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="row">
+      <div class="col">
+        <div class="label">Cliente</div>
+        <div class="value-lg">${order.customerName || '—'}</div>
+      </div>
+    </div>
+    ${order.customerPhone ? `<div style="margin-top:4px;"><span class="label">Tel: </span><span class="value">${order.customerPhone}</span></div>` : ''}
+  </div>
+
+  ${isPickup ? `
+  <div class="section">
+    <div class="row">
+      <div class="col">
+        <div class="label">Sucursal</div>
+        <div class="value-lg">${BRANCH_LABELS[order.branch] || order.branch || '—'}</div>
+      </div>
+      ${order.pickupDateLabel ? `
+      <div class="col">
+        <div class="label">Fecha retiro</div>
+        <div class="value" style="text-transform:capitalize">${order.pickupDateLabel}</div>
+      </div>` : ''}
+    </div>
+  </div>` : `
+  <div class="section">
+    <div class="label">Dirección de entrega</div>
+    <div class="value">${order.customerAddress || '—'}</div>
+  </div>`}
+
+  <div class="section">
+    <div class="label" style="margin-bottom:4px;">Productos</div>
+    <table>
+      <tbody>${itemsHtml}</tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td colspan="2">Total</td>
+          <td style="text-align:right">${formatPrice(order.adjustedTotal ?? order.total)}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  ${order.customerNotes ? `
+  <div class="section">
+    <div class="label">Notas del cliente</div>
+    <div style="font-size:11px;margin-top:2px;">${order.customerNotes}</div>
+  </div>` : ''}
+
+  <div class="footer">Generado el ${new Date().toLocaleDateString('es-AR')} ${new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</div>
+</body>
+</html>`
+
+  const w = window.open('', '_blank', 'width=400,height=600')
+  w.document.write(html)
+  w.document.close()
+  w.focus()
+  setTimeout(() => { w.print(); w.close() }, 300)
+}
 
 function formatPrice(n) {
   return n.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 })
@@ -168,15 +281,24 @@ export default function AdminOrderDetail() {
           </div>
           <p className="text-sm text-gray-500">Creado el {formatDate(order.createdAt)}</p>
         </div>
-        {!isClosed && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setCancelModal(true)}
-            className="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors"
+            onClick={() => printLabel(order)}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
           >
-            <XCircle className="w-4 h-4" />
-            Cancelar pedido
+            <Printer className="w-4 h-4" />
+            Imprimir etiqueta
           </button>
-        )}
+          {!isClosed && (
+            <button
+              onClick={() => setCancelModal(true)}
+              className="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors"
+            >
+              <XCircle className="w-4 h-4" />
+              Cancelar pedido
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
