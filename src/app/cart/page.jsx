@@ -10,8 +10,8 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { createOrder } from '@/lib/firestore'
-import { ShoppingBag, Trash2, Plus, Minus, ChevronLeft, FileText, MapPin, Truck, Store } from 'lucide-react'
+import { createOrder, getPickupDate } from '@/lib/firestore'
+import { ShoppingBag, Trash2, Plus, Minus, ChevronLeft, FileText, MapPin, Truck, Store, CalendarClock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const BRANCHES = [
@@ -166,23 +166,33 @@ function CartContent() {
           </div>
 
           {deliveryType === 'pickup' && (
-            <div>
-              <p className="text-xs font-medium text-gray-600 mb-2">Elegí la sucursal:</p>
-              <div className="grid grid-cols-3 gap-2">
-                {BRANCHES.map((b) => (
-                  <button
-                    key={b.value}
-                    type="button"
-                    onClick={() => setBranch(b.value)}
-                    className={`py-2 px-3 rounded-xl border-2 text-sm font-semibold transition-all ${
-                      branch === b.value
-                        ? 'border-primary bg-primary text-white'
-                        : 'border-gray-200 text-gray-600 hover:border-primary hover:text-primary'
-                    }`}
-                  >
-                    {b.label}
-                  </button>
-                ))}
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs font-medium text-gray-600 mb-2">Elegí la sucursal:</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {BRANCHES.map((b) => (
+                    <button
+                      key={b.value}
+                      type="button"
+                      onClick={() => setBranch(b.value)}
+                      className={`py-2 px-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                        branch === b.value
+                          ? 'border-primary bg-primary text-white'
+                          : 'border-gray-200 text-gray-600 hover:border-primary hover:text-primary'
+                      }`}
+                    >
+                      {b.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                <CalendarClock className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-semibold text-blue-800">Fecha estimada de retiro:</p>
+                  <p className="text-sm text-blue-700 font-medium capitalize">{getPickupDate().label}</p>
+                  <p className="text-xs text-blue-600 mt-0.5">Los retiros son martes y jueves. Pedidos antes de las 11 hs se retiran el mismo día.</p>
+                </div>
               </div>
             </div>
           )}

@@ -6,7 +6,7 @@ import OrderStatusBadge from '@/components/OrderStatusBadge'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import Modal from '@/components/Modal'
 import { subscribeToAllOrders, seedProducts, getAllProducts } from '@/lib/firestore'
-import { Package, Clock, CreditCard, CheckCircle, RefreshCw, Database, DollarSign, Store } from 'lucide-react'
+import { Package, Clock, CreditCard, CheckCircle, RefreshCw, Database, DollarSign, Store, Search } from 'lucide-react'
 
 const BRANCH_LABELS = { ac: 'AC', juncal: 'Juncal', fondo: 'Fondo', libertador: 'Libertador', cervino: 'Cerviño', santa_fe: 'Santa Fe' }
 import toast from 'react-hot-toast'
@@ -36,6 +36,7 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
+  const [searchOrder, setSearchOrder] = useState('')
   const [seedModal, setSeedModal] = useState(false)
   const [seeding, setSeeding] = useState(false)
 
@@ -73,7 +74,16 @@ export default function AdminDashboard() {
       .reduce((sum, o) => sum + (o.adjustedTotal ?? o.total ?? 0), 0),
   }
 
-  const filtered = statusFilter ? orders.filter((o) => o.status === statusFilter) : orders
+  const filtered = orders.filter((o) => {
+    if (statusFilter && o.status !== statusFilter) return false
+    if (searchOrder.trim()) {
+      const q = searchOrder.trim().replace(/^#/, '')
+      const matchNum = o.orderNum?.toString().includes(q)
+      const matchStr = o.orderNumber?.toLowerCase().includes(q.toLowerCase())
+      return matchNum || matchStr
+    }
+    return true
+  })
 
   const handleSeed = async () => {
     setSeeding(true)
@@ -150,6 +160,18 @@ export default function AdminDashboard() {
           </div>
           <p className="text-2xl font-bold text-emerald-900">{formatPrice(stats.revenueHoy)}</p>
         </div>
+      </div>
+
+      {/* Search by order number */}
+      <div className="relative mb-4 max-w-xs">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input
+          type="text"
+          value={searchOrder}
+          onChange={(e) => setSearchOrder(e.target.value)}
+          placeholder="Buscar por nº de pedido..."
+          className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
+        />
       </div>
 
       {/* Filter tabs */}

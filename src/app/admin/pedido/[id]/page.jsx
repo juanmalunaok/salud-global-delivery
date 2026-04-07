@@ -378,9 +378,14 @@ export default function AdminOrderDetail() {
                 <div>
                   <p className="text-xs text-gray-500">Tipo de entrega</p>
                   {order.deliveryType === 'pickup' ? (
-                    <p className="text-sm font-semibold text-primary">
-                      Retiro en sucursal · {BRANCH_LABELS[order.branch] || order.branch}
-                    </p>
+                    <>
+                      <p className="text-sm font-semibold text-primary">
+                        Retiro en sucursal · {BRANCH_LABELS[order.branch] || order.branch}
+                      </p>
+                      {order.pickupDateLabel && (
+                        <p className="text-xs text-gray-500 mt-0.5 capitalize">📅 {order.pickupDateLabel}</p>
+                      )}
+                    </>
                   ) : (
                     <p className="text-sm text-gray-900">Delivery a domicilio</p>
                   )}

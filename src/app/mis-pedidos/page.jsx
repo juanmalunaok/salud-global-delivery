@@ -10,7 +10,7 @@ import OrderStatusBadge from '@/components/OrderStatusBadge'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/contexts/AuthContext'
 import { subscribeToUserOrders } from '@/lib/firestore'
-import { Package, ChevronDown, ChevronUp, ExternalLink, ShoppingBag, Store, Truck } from 'lucide-react'
+import { Package, ChevronDown, ChevronUp, ExternalLink, ShoppingBag, Store, Truck, CalendarClock } from 'lucide-react'
 
 const BRANCH_LABELS = { ac: 'AC', juncal: 'Juncal', fondo: 'Fondo', libertador: 'Libertador', cervino: 'Cerviño', santa_fe: 'Santa Fe' }
 
@@ -116,17 +116,25 @@ function OrderCard({ order }) {
               <p className="text-sm text-gray-700">{order.customerNotes}</p>
             </div>
           )}
-          <div className="mt-2 p-3 bg-gray-50 rounded-xl flex items-center gap-2">
+          <div className="mt-2 p-3 bg-gray-50 rounded-xl flex items-start gap-2">
             {order.deliveryType === 'pickup' ? (
               <>
-                <Store className="w-4 h-4 text-primary flex-shrink-0" />
-                <p className="text-sm text-gray-700 font-medium">
-                  Retiro en sucursal · <span className="text-primary">{BRANCH_LABELS[order.branch] || order.branch}</span>
-                </p>
+                <Store className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-gray-700 font-medium">
+                    Retiro en sucursal · <span className="text-primary">{BRANCH_LABELS[order.branch] || order.branch}</span>
+                  </p>
+                  {order.pickupDateLabel && (
+                    <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                      <CalendarClock className="w-3 h-3" />
+                      Fecha estimada: <span className="font-medium capitalize">{order.pickupDateLabel}</span>
+                    </p>
+                  )}
+                </div>
               </>
             ) : (
               <>
-                <Truck className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <Truck className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-gray-700">
                   Delivery a domicilio{order.customerAddress ? ` · ${order.customerAddress}` : ''}
                 </p>

@@ -12,6 +12,7 @@ import {
   orderBy,
   serverTimestamp,
   onSnapshot,
+  runTransaction,
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from './firebase'
@@ -105,19 +106,60 @@ export async function deleteProduct(id) {
 // ORDERS
 // ───────────────────────────────────────────────
 
-function generateOrderNumber() {
-  const now = new Date()
-  const date = now.toISOString().slice(0, 10).replace(/-/g, '')
-  const rand = Math.floor(Math.random() * 900) + 100
-  return `SG-${date}-${rand}`
+async function getNextOrderNumber() {
+  const counterRef = doc(db, 'meta', 'orderCounter')
+  let nextNum = 1
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(counterRef)
+    nextNum = snap.exists() ? (snap.data().count || 0) + 1 : 1
+    tx.set(counterRef, { count: nextNum })
+  })
+  return nextNum
+}
+
+// Returns { date: Date, label: string } for pickup orders
+export function getPickupDate(now = new Date()) {
+  const day = now.getDay() // 0=Dom 1=Lun 2=Mar 3=Mié 4=Jue 5=Vie 6=Sáb
+  const hour = now.getHours()
+  const isPickupDay = day === 2 || day === 4 // Martes o Jueves
+  const before11 = hour < 11
+
+  let pickupDate
+  if (isPickupDay && before11) {
+    pickupDate = new Date(now)
+  } else {
+    // Próximo jueves
+    const daysUntilThursday = ((4 - day + 7) % 7) || 7
+    pickupDate = new Date(now)
+    pickupDate.setDate(now.getDate() + daysUntilThursday)
+  }
+  pickupDate.setHours(0, 0, 0, 0)
+
+  const label = pickupDate.toLocaleDateString('es-AR', {
+    weekday: 'long', day: '2-digit', month: 'long',
+  })
+  return { date: pickupDate, label }
 }
 
 export async function createOrder(userId, orderData) {
-  const orderNumber = generateOrderNumber()
+  const orderNum = await getNextOrderNumber()
+  const orderNumber = `#${orderNum}`
+
+  let pickupDateISO = null
+  let pickupDateLabel = null
+  if (orderData.deliveryType === 'pickup') {
+    const { date, label } = getPickupDate(new Date())
+    pickupDateISO = date.toISOString()
+    pickupDateLabel = label
+  }
+
   const ref = await addDoc(collection(db, 'orders'), {
     ...orderData,
     userId,
     orderNumber,
+    orderNum,
+    pickupDate: pickupDateISO,
+    pickupDateLabel,
     status: 'pendiente',
     paymentLink: '',
     adminNotes: '',
