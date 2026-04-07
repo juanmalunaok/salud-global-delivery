@@ -5,21 +5,20 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { updateUserDoc } from '@/lib/firestore'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { User, Phone, MapPin, CreditCard, IdCard, Cross, CheckCircle } from 'lucide-react'
+import { User, Phone, MapPin, CreditCard, Cross, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const FIELDS = [
   { key: 'name', label: 'Nombre completo', icon: User, type: 'text', placeholder: 'Tu nombre y apellido', required: true },
   { key: 'phone', label: 'Teléfono', icon: Phone, type: 'tel', placeholder: 'Ej: 11 1234-5678', required: true },
   { key: 'documento', label: 'DNI / Documento', icon: CreditCard, type: 'text', placeholder: 'Número de documento', required: true },
-  { key: 'obraSocial', label: 'Obra social', icon: Cross, type: 'text', placeholder: 'Ej: OSDE, PAMI, Swiss Medical... o "Particular"', required: false },
   { key: 'address', label: 'Dirección de entrega', icon: MapPin, type: 'textarea', placeholder: 'Calle, número, piso, depto, barrio...', required: false },
 ]
 
 export default function CompletarPerfilPage() {
   const { user, userDoc, loading, refreshUserDoc } = useAuth()
   const router = useRouter()
-  const [form, setForm] = useState({ name: '', phone: '', documento: '', obraSocial: '', address: '' })
+  const [form, setForm] = useState({ name: '', phone: '', documento: '', address: '' })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -31,7 +30,6 @@ export default function CompletarPerfilPage() {
           name: userDoc.name || user.displayName || '',
           phone: userDoc.phone || '',
           documento: userDoc.documento || '',
-          obraSocial: userDoc.obraSocial || '',
           address: userDoc.address || '',
         })
       }
@@ -48,7 +46,6 @@ export default function CompletarPerfilPage() {
         name: form.name.trim(),
         phone: form.phone.trim(),
         documento: form.documento.trim(),
-        obraSocial: form.obraSocial.trim(),
         address: form.address.trim(),
         profileComplete: true,
       })

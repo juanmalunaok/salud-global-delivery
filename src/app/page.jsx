@@ -304,16 +304,29 @@ export default function CatalogPage() {
             />
           </div>
 
-          {/* Receta CTA */}
-          <button
-            onClick={() => user ? setRecetaModal(true) : router.push('/login')}
-            className="mt-4 inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/30 text-white text-sm font-medium px-5 py-2.5 rounded-full transition-colors"
-          >
-            <Pill className="w-4 h-4" />
-            ¿Solo tenés receta? Pedí sin agregar productos
-          </button>
         </div>
       </section>
+
+      {/* Receta CTA */}
+      <div className="bg-amber-50 border-b border-amber-200 px-4 py-5">
+        <div className="max-w-3xl mx-auto">
+          <button
+            onClick={() => user ? setRecetaModal(true) : router.push('/login')}
+            className="w-full flex items-center gap-5 bg-white hover:bg-amber-50 border-2 border-amber-400 hover:border-amber-500 rounded-2xl px-6 py-5 shadow-sm transition-all group"
+          >
+            <div className="w-14 h-14 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-amber-200 transition-colors">
+              <Pill className="w-8 h-8 text-amber-600" />
+            </div>
+            <div className="text-left flex-1">
+              <p className="text-lg font-bold text-gray-900 leading-snug">¿Ya tenés receta médica?</p>
+              <p className="text-base text-gray-500 mt-0.5">Creá tu pedido directamente, sin agregar productos al carrito</p>
+            </div>
+            <div className="flex-shrink-0 bg-amber-500 hover:bg-amber-600 text-white font-bold text-base px-5 py-2.5 rounded-xl transition-colors">
+              Pedir con receta
+            </div>
+          </button>
+        </div>
+      </div>
 
       {/* Main */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
