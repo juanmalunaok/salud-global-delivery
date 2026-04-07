@@ -290,6 +290,33 @@ export async function deleteAnnouncement(id) {
 }
 
 // ───────────────────────────────────────────────
+// NOTIFICATIONS
+// ───────────────────────────────────────────────
+
+export async function createNotification(data) {
+  return addDoc(collection(db, 'notifications'), {
+    ...data,
+    read: false,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export async function markNotificationRead(id) {
+  await updateDoc(doc(db, 'notifications', id), { read: true })
+}
+
+export function subscribeToUnreadNotifications(callback) {
+  const q = query(
+    collection(db, 'notifications'),
+    where('read', '==', false),
+    orderBy('createdAt', 'desc')
+  )
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+  })
+}
+
+// ───────────────────────────────────────────────
 // REALTIME LISTENERS
 // ───────────────────────────────────────────────
 

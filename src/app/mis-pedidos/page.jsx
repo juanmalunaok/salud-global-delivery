@@ -9,7 +9,7 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import OrderStatusBadge from '@/components/OrderStatusBadge'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/contexts/AuthContext'
-import { subscribeToUserOrders, updateOrder, ADMIN_EMAIL } from '@/lib/firestore'
+import { subscribeToUserOrders, updateOrder, createNotification, ADMIN_EMAIL } from '@/lib/firestore'
 import { Package, ChevronDown, ChevronUp, ExternalLink, ShoppingBag, Store, Truck, CalendarClock, Mail, CheckCircle2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -58,6 +58,12 @@ function OrderCard({ order }) {
     setConfirmingPayment(true)
     try {
       await updateOrder(order.id, { pagoPendienteConfirmacion: true })
+      await createNotification({
+        type: 'pago_confirmado',
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        customerName: order.customerName,
+      })
       setPaymentModal(false)
       toast.success('¡Gracias! El equipo confirmará tu pago pronto.')
     } catch {
