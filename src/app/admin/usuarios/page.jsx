@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import Modal from '@/components/Modal'
 import { getAllUsers, getUserOrders, updateUserDoc } from '@/lib/firestore'
-import { Users, Search, User, Mail, Phone, MapPin, Package, Shield, ShieldOff } from 'lucide-react'
+import {
+  Users, Search, User, Mail, Phone, MapPin, Package,
+  Shield, ShieldOff, CreditCard, Cross, Download, Calendar,
+} from 'lucide-react'
 import OrderStatusBadge from '@/components/OrderStatusBadge'
 import toast from 'react-hot-toast'
 
@@ -15,7 +18,38 @@ function formatDate(ts) {
 }
 
 function formatPrice(n) {
-  return n.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 })
+  return n?.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }) ?? '—'
+}
+
+function exportToCSV(users) {
+  const headers = ['Nombre', 'Email', 'Teléfono', 'DNI', 'Obra Social', 'Dirección', 'Rol', 'Perfil completo', 'Registrado']
+  const rows = users
+    .filter(u => u.role !== 'admin')
+    .map(u => [
+      u.name || '',
+      u.email || '',
+      u.phone || '',
+      u.documento || '',
+      u.obraSocial || '',
+      u.address || '',
+      u.role || '',
+      u.profileComplete ? 'Sí' : 'No',
+      formatDate(u.createdAt),
+    ])
+
+  const csvContent = [headers, ...rows]
+    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    .join('\n')
+
+  const BOM = '\uFEFF'
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `clientes-salud-global-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+  toast.success('CSV descargado. Importalo en Google Sheets.')
 }
 
 export default function UsuariosAdminPage() {
@@ -42,8 +76,7 @@ export default function UsuariosAdminPage() {
     try {
       const orders = await getUserOrders(user.id)
       setUserOrders(orders)
-    } catch (err) {
-      console.error(err)
+    } catch {
       setUserOrders([])
     } finally {
       setOrdersLoading(false)
@@ -55,12 +88,10 @@ export default function UsuariosAdminPage() {
     try {
       const newRole = user.role === 'admin' ? 'customer' : 'admin'
       await updateUserDoc(user.id, { role: newRole })
-      toast.success(`Rol de ${user.name || user.email} cambiado a "${newRole}".`)
+      toast.success(`Rol cambiado a "${newRole}".`)
       fetchUsers()
-      if (selectedUser?.id === user.id) {
-        setSelectedUser({ ...selectedUser, role: newRole })
-      }
-    } catch (err) {
+      if (selectedUser?.id === user.id) setSelectedUser({ ...selectedUser, role: newRole })
+    } catch {
       toast.error('Error al cambiar el rol.')
     } finally {
       setChangingRole(false)
@@ -72,15 +103,31 @@ export default function UsuariosAdminPage() {
     const matchesSearch =
       !search ||
       u.name?.toLowerCase().includes(search.toLowerCase()) ||
-      u.email?.toLowerCase().includes(search.toLowerCase())
+      u.email?.toLowerCase().includes(search.toLowerCase()) ||
+      u.documento?.toLowerCase().includes(search.toLowerCase())
     return matchesRole && matchesSearch
   })
 
+  const totalOrders = userOrders.length
+  const totalSpent = userOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+
   return (
     <div className="p-6 lg:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 font-heading">Usuarios</h1>
-        <p className="text-text-secondary text-sm mt-1">{users.length} usuario{users.length !== 1 ? 's' : ''} registrado{users.length !== 1 ? 's' : ''}</p>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 font-heading">Usuarios</h1>
+          <p className="text-text-secondary text-sm mt-1">
+            {users.filter(u => u.role !== 'admin').length} cliente{users.filter(u => u.role !== 'admin').length !== 1 ? 's' : ''} registrado{users.filter(u => u.role !== 'admin').length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <button
+          onClick={() => exportToCSV(users)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Exportar CSV
+        </button>
       </div>
 
       {/* Filters */}
@@ -91,7 +138,7 @@ export default function UsuariosAdminPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nombre o email..."
+            placeholder="Buscar por nombre, email o DNI..."
             className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
           />
         </div>
@@ -122,6 +169,7 @@ export default function UsuariosAdminPage() {
                 <tr className="border-b border-gray-100 bg-gray-50">
                   <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Usuario</th>
                   <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3 hidden sm:table-cell">Email</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3 hidden md:table-cell">Teléfono</th>
                   <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3 hidden md:table-cell">Registrado</th>
                   <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Rol</th>
                   <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Acciones</th>
@@ -132,23 +180,31 @@ export default function UsuariosAdminPage() {
                   <tr key={u.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4 text-primary" />
+                        {u.photoURL ? (
+                          <img src={u.photoURL} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <User className="w-4 h-4 text-primary" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{u.name || '—'}</p>
+                          {u.documento && <p className="text-xs text-gray-400">DNI {u.documento}</p>}
                         </div>
-                        <p className="text-sm font-medium text-gray-900">{u.name || '—'}</p>
                       </div>
                     </td>
                     <td className="px-5 py-4 hidden sm:table-cell">
                       <span className="text-sm text-gray-600">{u.email}</span>
                     </td>
                     <td className="px-5 py-4 hidden md:table-cell">
+                      <span className="text-sm text-gray-600">{u.phone || '—'}</span>
+                    </td>
+                    <td className="px-5 py-4 hidden md:table-cell">
                       <span className="text-sm text-gray-500">{formatDate(u.createdAt)}</span>
                     </td>
                     <td className="px-5 py-4">
                       <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${
-                        u.role === 'admin'
-                          ? 'bg-primary/10 text-primary'
-                          : 'bg-gray-100 text-gray-600'
+                        u.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'
                       }`}>
                         {u.role === 'admin' ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />}
                         {u.role === 'admin' ? 'Admin' : 'Cliente'}
@@ -160,7 +216,7 @@ export default function UsuariosAdminPage() {
                           onClick={() => openUserDetail(u)}
                           className="text-sm text-primary font-medium hover:underline"
                         >
-                          Ver pedidos
+                          Ver perfil
                         </button>
                         <button
                           onClick={() => handleToggleAdmin(u)}
@@ -184,55 +240,109 @@ export default function UsuariosAdminPage() {
       <Modal
         isOpen={!!selectedUser}
         onClose={() => { setSelectedUser(null); setUserOrders([]) }}
-        title="Pedidos del usuario"
-        maxWidth="max-w-xl"
+        title="Perfil del cliente"
+        maxWidth="max-w-lg"
       >
         {selectedUser && (
-          <div>
-            <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-primary" />
-              </div>
+          <div className="space-y-5">
+            {/* Avatar + name */}
+            <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
+              {selectedUser.photoURL ? (
+                <img src={selectedUser.photoURL} alt="" className="w-14 h-14 rounded-full object-cover" />
+              ) : (
+                <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center">
+                  <User className="w-7 h-7 text-primary" />
+                </div>
+              )}
               <div>
-                <p className="font-semibold text-gray-900">{selectedUser.name || 'Sin nombre'}</p>
-                <p className="text-sm text-gray-500">{selectedUser.email}</p>
-                {selectedUser.phone && (
-                  <p className="text-sm text-gray-500">{selectedUser.phone}</p>
-                )}
-                {selectedUser.address && (
-                  <p className="text-xs text-gray-400 mt-1">{selectedUser.address}</p>
-                )}
+                <p className="font-bold text-gray-900 text-lg">{selectedUser.name || 'Sin nombre'}</p>
+                <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+                  selectedUser.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {selectedUser.role === 'admin' ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                  {selectedUser.role === 'admin' ? 'Admin' : 'Cliente'}
+                </span>
               </div>
             </div>
 
-            <h3 className="font-semibold text-gray-900 mb-3 text-sm">Historial de pedidos</h3>
-
-            {ordersLoading ? (
-              <div className="flex justify-center py-8"><LoadingSpinner /></div>
-            ) : userOrders.length === 0 ? (
-              <div className="text-center py-8">
-                <Package className="w-10 h-10 text-gray-200 mx-auto mb-2" />
-                <p className="text-sm text-gray-400">Este usuario no hizo pedidos todavía.</p>
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-80 overflow-y-auto">
-                {userOrders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between py-2.5 px-3 bg-gray-50 rounded-xl">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{order.orderNumber}</p>
-                      <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-primary">{formatPrice(order.total)}</span>
-                      <OrderStatusBadge status={order.status} size="sm" />
-                    </div>
-                  </div>
-                ))}
+            {/* Stats */}
+            {!ordersLoading && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-blue-50 rounded-xl p-3 text-center">
+                  <p className="text-2xl font-bold text-primary">{totalOrders}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Pedidos totales</p>
+                </div>
+                <div className="bg-green-50 rounded-xl p-3 text-center">
+                  <p className="text-lg font-bold text-green-700">{formatPrice(totalSpent)}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Total gastado</p>
+                </div>
               </div>
             )}
+
+            {/* Contact info */}
+            <div className="space-y-2.5">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Datos de contacto</p>
+              <div className="grid grid-cols-1 gap-2">
+                <InfoRow icon={Mail} label="Email" value={selectedUser.email} />
+                <InfoRow icon={Phone} label="Teléfono" value={selectedUser.phone} />
+                <InfoRow icon={MapPin} label="Dirección" value={selectedUser.address} />
+              </div>
+            </div>
+
+            {/* Health info */}
+            <div className="space-y-2.5">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Datos de salud</p>
+              <div className="grid grid-cols-2 gap-2">
+                <InfoRow icon={CreditCard} label="DNI" value={selectedUser.documento} />
+                <InfoRow icon={Cross} label="Obra social" value={selectedUser.obraSocial} />
+              </div>
+            </div>
+
+            {/* Registration */}
+            <InfoRow icon={Calendar} label="Registrado el" value={formatDate(selectedUser.createdAt)} />
+
+            {/* Orders */}
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Historial de pedidos</p>
+              {ordersLoading ? (
+                <div className="flex justify-center py-6"><LoadingSpinner /></div>
+              ) : userOrders.length === 0 ? (
+                <div className="text-center py-6 bg-gray-50 rounded-xl">
+                  <Package className="w-8 h-8 text-gray-200 mx-auto mb-1.5" />
+                  <p className="text-sm text-gray-400">Sin pedidos todavía.</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                  {userOrders.map((order) => (
+                    <div key={order.id} className="flex items-center justify-between py-2.5 px-3 bg-gray-50 rounded-xl">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{order.orderNumber}</p>
+                        <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-semibold text-primary">{formatPrice(order.total)}</span>
+                        <OrderStatusBadge status={order.status} size="sm" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </Modal>
+    </div>
+  )
+}
+
+function InfoRow({ icon: Icon, label, value }) {
+  return (
+    <div className="flex items-start gap-2.5 bg-gray-50 rounded-xl px-3 py-2.5">
+      <Icon className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+      <div className="min-w-0">
+        <p className="text-xs text-gray-400">{label}</p>
+        <p className="text-sm text-gray-800 font-medium truncate">{value || '—'}</p>
+      </div>
     </div>
   )
 }
