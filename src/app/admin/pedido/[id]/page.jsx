@@ -592,11 +592,27 @@ export default function AdminOrderDetail() {
                       {order.paymentLink}
                     </a>
                   </div>
-                  <p className="text-sm text-gray-500">Esperando que el cliente realice el pago.</p>
+                  {order.pagoPendienteConfirmacion ? (
+                    <div className="p-4 bg-green-50 border-2 border-green-400 rounded-xl flex items-start gap-3">
+                      <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-green-800 text-sm">¡El cliente confirmó que pagó!</p>
+                        <p className="text-xs text-green-700 mt-0.5">Verificá el pago en MercadoPago y confirmalo abajo.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">Esperando que el cliente realice el pago.</p>
+                  )}
                   <button
                     onClick={handleConfirmPayment}
                     disabled={actionLoading}
-                    className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                    className={`w-full font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:bg-gray-300 text-white ${
+                      order.pagoPendienteConfirmacion
+                        ? 'bg-green-600 hover:bg-green-700 animate-pulse'
+                        : 'bg-green-600 hover:bg-green-700'
+                    }`}
                   >
                     {actionLoading ? <LoadingSpinner size="sm" className="border-white/30 border-t-white" /> : <CheckCircle className="w-5 h-5" />}
                     Confirmar pago recibido
