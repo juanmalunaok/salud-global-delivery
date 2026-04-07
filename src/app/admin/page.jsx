@@ -6,7 +6,7 @@ import OrderStatusBadge from '@/components/OrderStatusBadge'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import Modal from '@/components/Modal'
 import { subscribeToAllOrders, seedProducts, getAllProducts } from '@/lib/firestore'
-import { Package, Clock, CreditCard, Truck, CheckCircle, RefreshCw, Database } from 'lucide-react'
+import { Package, Clock, CreditCard, CheckCircle, RefreshCw, Database, DollarSign } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 function formatPrice(n) {
@@ -48,6 +48,8 @@ export default function AdminDashboard() {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
+  const PAID_STATUSES = ['pagado', 'en_preparacion', 'listo', 'entregado']
+
   const stats = {
     pendiente: orders.filter((o) => o.status === 'pendiente').length,
     presupuestado: orders.filter((o) => o.status === 'presupuestado').length,
@@ -57,6 +59,16 @@ export default function AdminDashboard() {
       const ts = o.deliveredAt?.toDate?.() || (o.deliveredAt ? new Date(o.deliveredAt) : null)
       return ts && ts >= today
     }).length,
+    revenueHoy: orders
+      .filter((o) => {
+        if (!PAID_STATUSES.includes(o.status)) return false
+        const ts = o.paidAt?.toDate?.() || (o.paidAt ? new Date(o.paidAt) : null)
+        if (ts) return ts >= today
+        // fallback: createdAt today
+        const created = o.createdAt?.toDate?.() || (o.createdAt ? new Date(o.createdAt) : null)
+        return created && created >= today
+      })
+      .reduce((sum, o) => sum + (o.adjustedTotal ?? o.total ?? 0), 0),
   }
 
   const filtered = statusFilter ? orders.filter((o) => o.status === statusFilter) : orders
@@ -100,7 +112,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="w-5 h-5 text-yellow-600" />
@@ -128,6 +140,13 @@ export default function AdminDashboard() {
             <span className="text-sm font-medium text-green-800">Entregados hoy</span>
           </div>
           <p className="text-3xl font-bold text-green-900">{stats.entregadoHoy}</p>
+        </div>
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 col-span-2 lg:col-span-1">
+          <div className="flex items-center gap-2 mb-2">
+            <DollarSign className="w-5 h-5 text-emerald-600" />
+            <span className="text-sm font-medium text-emerald-800">Recaudado hoy</span>
+          </div>
+          <p className="text-2xl font-bold text-emerald-900">{formatPrice(stats.revenueHoy)}</p>
         </div>
       </div>
 

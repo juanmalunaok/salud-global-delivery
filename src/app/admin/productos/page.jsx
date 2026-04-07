@@ -106,7 +106,7 @@ export default function ProductosAdminPage() {
   const handleDelete = async (product) => {
     try {
       await deleteProduct(product.id)
-      toast.success('Producto desactivado.')
+      toast.success('Producto eliminado.')
       setDeleteModal(null)
       fetchProducts()
     } catch (err) {
@@ -357,13 +357,13 @@ export default function ProductosAdminPage() {
       </Modal>
 
       {/* Delete confirm modal */}
-      <Modal isOpen={!!deleteModal} onClose={() => setDeleteModal(null)} title="Desactivar producto">
+      <Modal isOpen={!!deleteModal} onClose={() => setDeleteModal(null)} title="Eliminar producto">
         <p className="text-gray-600 text-sm mb-6">
-          ¿Desactivar <strong>{deleteModal?.name}</strong>? El producto dejará de aparecer en el catálogo pero no se eliminará de la base de datos.
+          ¿Eliminar <strong>{deleteModal?.name}</strong>? Esta acción es permanente y no se puede deshacer.
         </p>
         <div className="flex gap-3">
           <button onClick={() => setDeleteModal(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600">Cancelar</button>
-          <button onClick={() => handleDelete(deleteModal)} className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-colors">Desactivar</button>
+          <button onClick={() => handleDelete(deleteModal)} className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-colors">Eliminar</button>
         </div>
       </Modal>
     </div>

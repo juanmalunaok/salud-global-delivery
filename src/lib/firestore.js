@@ -86,7 +86,7 @@ export async function updateProduct(id, data) {
 }
 
 export async function deleteProduct(id) {
-  await updateDoc(doc(db, 'products', id), { active: false })
+  await deleteDoc(doc(db, 'products', id))
 }
 
 // ───────────────────────────────────────────────
