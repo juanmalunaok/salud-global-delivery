@@ -10,7 +10,6 @@ const NAV_ITEMS = [
   { href: '/admin/productos', label: 'Productos', icon: Package },
   { href: '/admin/usuarios', label: 'Usuarios', icon: Users },
   { href: '/admin/anuncios', label: 'Anuncios', icon: Megaphone },
-  { href: '/admin/obras-sociales', label: 'Obras Sociales', icon: Cross },
 ]
 
 export default function AdminSidebar() {
