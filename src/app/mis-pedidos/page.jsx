@@ -94,11 +94,11 @@ function OrderCard({ order }) {
                   <Mail className="w-4 h-4" /> Enviá tu receta por email
                 </p>
                 <p className="text-xs text-orange-700 mb-3">
-                  Mandá una foto de tu receta a{' '}
-                  <a href={`mailto:${ADMIN_EMAIL}`} className="font-semibold underline" onClick={e => e.stopPropagation()}>
+                  Reenviá el mail de la receta a{' '}
+                  <a href={`mailto:${ADMIN_EMAIL}?subject=Receta pedido ${order.orderNumber}`} className="font-semibold underline" onClick={e => e.stopPropagation()}>
                     {ADMIN_EMAIL}
                   </a>
-                  {' '}con el número de pedido <strong>{order.orderNumber}</strong>.
+                  {' '}poniendo en el asunto: <strong>Receta pedido {order.orderNumber}</strong>.
                 </p>
                 <button
                   onClick={handleMarkShared}

@@ -7,7 +7,7 @@ import OrderStatusBadge from '@/components/OrderStatusBadge'
 import OrderTimeline from '@/components/OrderTimeline'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import Modal from '@/components/Modal'
-import { getOrder, updateOrderStatus, updateOrder } from '@/lib/firestore'
+import { getOrder, subscribeToOrder, updateOrderStatus, updateOrder } from '@/lib/firestore'
 import {
   ChevronLeft, User, Phone, MapPin, Mail,
   Link as LinkIcon, CheckCircle, Package, Truck, Star, XCircle,
@@ -173,7 +173,6 @@ export default function AdminOrderDetail() {
     setOrder(data)
     if (data) {
       setPaymentLink(data.paymentLink || '')
-      // Pre-fill with discounted total if available, otherwise original total
       const prefillTotal = data.finalTotal ?? data.total
       setAdjustedTotal(prefillTotal?.toString() || '')
       setAdminNotes(data.adminNotes || '')
@@ -181,7 +180,13 @@ export default function AdminOrderDetail() {
     setLoading(false)
   }
 
-  useEffect(() => { fetchOrder() }, [id])
+  useEffect(() => {
+    fetchOrder()
+    const unsub = subscribeToOrder(id, (data) => {
+      if (data) setOrder(data)
+    })
+    return unsub
+  }, [id])
 
   const doAction = async (fn) => {
     setActionLoading(true)

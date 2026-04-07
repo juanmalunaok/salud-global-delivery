@@ -188,6 +188,12 @@ export async function getOrder(id) {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null
 }
 
+export function subscribeToOrder(id, callback) {
+  return onSnapshot(doc(db, 'orders', id), (snap) => {
+    callback(snap.exists() ? { id: snap.id, ...snap.data() } : null)
+  })
+}
+
 export async function getUserOrders(userId) {
   const q = query(
     collection(db, 'orders'),
