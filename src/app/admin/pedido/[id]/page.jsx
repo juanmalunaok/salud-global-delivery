@@ -164,6 +164,7 @@ export default function AdminOrderDetail() {
   const [cancelModal, setCancelModal] = useState(false)
   const [paymentLink, setPaymentLink] = useState('')
   const [adjustedTotal, setAdjustedTotal] = useState('')
+  const [recetaPaymentLink, setRecetaPaymentLink] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
 
@@ -172,7 +173,9 @@ export default function AdminOrderDetail() {
     setOrder(data)
     if (data) {
       setPaymentLink(data.paymentLink || '')
-      setAdjustedTotal(data.total?.toString() || '')
+      // Pre-fill with discounted total if available, otherwise original total
+      const prefillTotal = data.finalTotal ?? data.total
+      setAdjustedTotal(prefillTotal?.toString() || '')
       setAdminNotes(data.adminNotes || '')
     }
     setLoading(false)
@@ -193,11 +196,21 @@ export default function AdminOrderDetail() {
     }
   }
 
-  const handleValidateReceta = () =>
+  const handleValidateAndBudget = () => {
+    if (!recetaPaymentLink.trim()) {
+      toast.error('Ingresá el link de MercadoPago para enviar el presupuesto.')
+      return
+    }
     doAction(async () => {
-      await updateOrderStatus(id, 'pendiente')
-      toast.success('Receta validada. Pedido pasa a pendiente.')
+      const discountedTotal = order.finalTotal ?? order.total
+      await updateOrderStatus(id, 'presupuestado', {
+        paymentLink: recetaPaymentLink.trim(),
+        total: discountedTotal,
+        adjustedTotal: discountedTotal,
+      })
+      toast.success('Receta validada y presupuesto enviado al cliente.')
     })
+  }
 
   const handleSendBudget = () => {
     if (!paymentLink.trim()) {
@@ -380,32 +393,66 @@ export default function AdminOrderDetail() {
 
               {isEsperandoReceta && (
                 <div className="space-y-4">
-                  {order.recetaCompartida ? (
-                    <>
-                      <div className="p-3 bg-green-50 border border-green-200 rounded-xl flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm font-semibold text-green-800">El cliente confirmó que envió la receta por email.</p>
-                          <p className="text-xs text-green-700 mt-0.5">Revisá tu casilla y validá la receta para continuar.</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={handleValidateReceta}
-                        disabled={actionLoading}
-                        className="w-full bg-primary hover:bg-primary-light disabled:bg-gray-300 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
-                      >
-                        {actionLoading ? <LoadingSpinner size="sm" className="border-white/30 border-t-white" /> : <CheckCircle className="w-5 h-5" />}
-                        Receta validada — continuar pedido
-                      </button>
-                    </>
-                  ) : (
+                  {!order.recetaCompartida ? (
                     <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
                       <FileText className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="text-sm font-semibold text-amber-800">Esperando que el cliente envíe la receta por email.</p>
-                        <p className="text-xs text-amber-700 mt-0.5">El cliente debe enviar la foto de la receta a tu casilla antes de continuar.</p>
+                        <p className="text-xs text-amber-700 mt-0.5">El cliente debe enviar la foto de la receta antes de continuar.</p>
                       </div>
                     </div>
+                  ) : (
+                    <>
+                      <div className="p-3 bg-green-50 border border-green-200 rounded-xl flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-semibold text-green-800">El cliente confirmó que envió la receta.</p>
+                          <p className="text-xs text-green-700 mt-0.5">Revisá tu casilla, validá la receta y enviá el presupuesto con el descuento aplicado.</p>
+                        </div>
+                      </div>
+
+                      {/* Discount summary */}
+                      {order.discountPercent > 0 && (
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm space-y-1">
+                          <p className="font-semibold text-blue-800">Descuento obra social — {order.customerObraSocial}</p>
+                          <div className="flex justify-between text-blue-700">
+                            <span>Total original</span>
+                            <span>{formatPrice(order.total)}</span>
+                          </div>
+                          <div className="flex justify-between text-green-700 font-medium">
+                            <span>Descuento {order.discountPercent}%</span>
+                            <span>- {formatPrice(order.discountAmount)}</span>
+                          </div>
+                          <div className="flex justify-between text-blue-900 font-bold border-t border-blue-200 pt-1">
+                            <span>Total con descuento</span>
+                            <span>{formatPrice(order.finalTotal)}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                          <LinkIcon className="w-4 h-4 text-gray-400" />
+                          Link de pago (MercadoPago)
+                        </label>
+                        <input
+                          type="url"
+                          value={recetaPaymentLink}
+                          onChange={(e) => setRecetaPaymentLink(e.target.value)}
+                          placeholder="https://mpago.la/..."
+                          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                        />
+                      </div>
+
+                      <button
+                        onClick={handleValidateAndBudget}
+                        disabled={actionLoading}
+                        className="w-full bg-primary hover:bg-primary-light disabled:bg-gray-300 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                      >
+                        {actionLoading ? <LoadingSpinner size="sm" className="border-white/30 border-t-white" /> : <CheckCircle className="w-5 h-5" />}
+                        Validar receta y enviar presupuesto
+                      </button>
+                    </>
                   )}
                 </div>
               )}

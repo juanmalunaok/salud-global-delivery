@@ -341,19 +341,29 @@ function CartContent() {
           {discountPct > 0 && (
             <div className="mt-3 px-3 py-2 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 flex items-center gap-2">
               <Tag className="w-3.5 h-3.5 flex-shrink-0" />
-              Descuento {obraSocialDiscount.nombre} ({discountPct}% OFF) aplicado automáticamente.
+              {orderType === 'con_receta'
+                ? `Tenés ${discountPct}% de descuento (${obraSocialDiscount.nombre}). Se aplicará al validar tu receta.`
+                : `Descuento ${obraSocialDiscount.nombre} (${discountPct}% OFF) aplicado automáticamente.`
+              }
             </div>
           )}
 
           <div className="flex justify-between items-center py-4">
-            <span className="font-semibold text-gray-900">Total estimado</span>
+            <span className="font-semibold text-gray-900">
+              {orderType === 'con_receta' && discountPct > 0 ? 'Total estimado *' : 'Total estimado'}
+            </span>
             <div className="text-right">
-              {discountPct > 0 && (
+              {discountPct > 0 && orderType !== 'con_receta' && (
                 <p className="text-sm text-gray-400 line-through">{formatPrice(total)}</p>
               )}
-              <span className="text-xl font-bold text-primary">{formatPrice(finalTotal)}</span>
+              <span className="text-xl font-bold text-primary">
+                {orderType === 'con_receta' ? formatPrice(total) : formatPrice(finalTotal)}
+              </span>
             </div>
           </div>
+          {orderType === 'con_receta' && discountPct > 0 && (
+            <p className="text-xs text-gray-400 -mt-2 mb-2">* El descuento del {discountPct}% se aplica al presupuesto final al validar tu receta.</p>
+          )}
 
           <p className="text-xs text-gray-400 mb-4">
             El precio final puede ajustarse según disponibilidad. El equipo de Salud Global te enviará el presupuesto definitivo.
