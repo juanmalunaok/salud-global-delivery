@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import CartDrawer from '@/components/CartDrawer'
@@ -8,8 +9,19 @@ import ProductCard from '@/components/ProductCard'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import AnnouncementModal from '@/components/AnnouncementModal'
 import AnnouncementBanner from '@/components/AnnouncementBanner'
-import { getProducts, getActiveAnnouncements } from '@/lib/firestore'
-import { Search, Package } from 'lucide-react'
+import { getProducts, getActiveAnnouncements, createOrder } from '@/lib/firestore'
+import { useAuth } from '@/contexts/AuthContext'
+import { Search, Package, Pill, Store, Truck, X, CheckCircle } from 'lucide-react'
+import toast from 'react-hot-toast'
+
+const BRANCHES = [
+  { value: 'ac', label: 'AC' },
+  { value: 'juncal', label: 'Juncal' },
+  { value: 'fondo', label: 'Fondo' },
+  { value: 'libertador', label: 'Libertador' },
+  { value: 'cervino', label: 'Cerviño' },
+  { value: 'santa_fe', label: 'Santa Fe' },
+]
 
 const CATEGORIES = [
   { value: '', label: 'Todos' },
@@ -50,6 +62,159 @@ function markSeen(id) {
   } catch {}
 }
 
+function RecetaModal({ onClose }) {
+  const { user, userDoc } = useAuth()
+  const router = useRouter()
+  const [deliveryType, setDeliveryType] = useState('delivery')
+  const [branch, setBranch] = useState('')
+  const [notes, setNotes] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [done, setDone] = useState(false)
+
+  const handleSubmit = async () => {
+    if (!user) {
+      router.push('/login')
+      return
+    }
+    if (deliveryType === 'pickup' && !branch) {
+      toast.error('Seleccioná una sucursal para el retiro.')
+      return
+    }
+    setSubmitting(true)
+    try {
+      await createOrder(user.uid, {
+        customerName: userDoc?.name || user.displayName || '',
+        customerEmail: user.email || '',
+        customerPhone: userDoc?.phone || '',
+        customerAddress: userDoc?.address || '',
+        customerDocumento: userDoc?.documento || '',
+        customerObraSocial: userDoc?.obraSocial || '',
+        customerNotes: notes,
+        deliveryType,
+        orderType: 'con_receta',
+        branch: deliveryType === 'pickup' ? branch : null,
+        customPickupDate: null,
+        items: [],
+        subtotal: 0,
+        total: 0,
+        discountPercent: 0,
+        discountAmount: 0,
+        finalTotal: 0,
+      })
+      setDone(true)
+    } catch {
+      toast.error('Error al crear el pedido. Intentá de nuevo.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-primary px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-white">
+            <Pill className="w-5 h-5" />
+            <h2 className="font-bold font-heading">Pedido por receta médica</h2>
+          </div>
+          <button onClick={onClose} className="text-white/70 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {done ? (
+          <div className="p-6 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 font-heading mb-2">¡Pedido creado!</h3>
+            <p className="text-sm text-gray-500 mb-1">Ahora enviá la foto de tu receta al mail indicado</p>
+            <p className="text-sm text-gray-500 mb-6">y avisanos desde <strong>Mis pedidos</strong>.</p>
+            <button
+              onClick={() => router.push('/mis-pedidos')}
+              className="w-full bg-primary hover:bg-primary-light text-white font-semibold py-3 rounded-xl transition-colors"
+            >
+              Ver mis pedidos
+            </button>
+          </div>
+        ) : (
+          <div className="p-6 space-y-4">
+            <p className="text-sm text-gray-600">
+              Si ya tenés una receta médica podés crear el pedido directamente. La farmacia te contactará con el presupuesto.
+            </p>
+
+            {/* Delivery type */}
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-2">¿Cómo recibís tu pedido?</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => { setDeliveryType('delivery'); setBranch('') }}
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                    deliveryType === 'delivery' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-500'
+                  }`}
+                >
+                  <Truck className="w-4 h-4" /> Delivery
+                </button>
+                <button
+                  onClick={() => setDeliveryType('pickup')}
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                    deliveryType === 'pickup' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-500'
+                  }`}
+                >
+                  <Store className="w-4 h-4" /> Retiro
+                </button>
+              </div>
+            </div>
+
+            {/* Branch */}
+            {deliveryType === 'pickup' && (
+              <div>
+                <p className="text-xs font-medium text-gray-600 mb-2">Elegí la sucursal:</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {BRANCHES.map((b) => (
+                    <button
+                      key={b.value}
+                      onClick={() => setBranch(b.value)}
+                      className={`py-2 rounded-xl border-2 text-sm font-semibold transition-all ${
+                        branch === b.value ? 'border-primary bg-primary text-white' : 'border-gray-200 text-gray-600 hover:border-primary hover:text-primary'
+                      }`}
+                    >
+                      {b.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Notes */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Notas (opcional)
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Ej: nombre del medicamento, dosis, médico que lo recetó..."
+                rows={3}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+              />
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="w-full bg-primary hover:bg-primary-light disabled:bg-gray-300 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              {submitting ? <LoadingSpinner size="sm" className="border-white/30 border-t-white" /> : null}
+              Crear pedido por receta
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function CatalogPage() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -57,6 +222,9 @@ export default function CatalogPage() {
   const [category, setCategory] = useState('')
   const [modalAnnouncement, setModalAnnouncement] = useState(null)
   const [bannerAnnouncement, setBannerAnnouncement] = useState(null)
+  const [recetaModal, setRecetaModal] = useState(false)
+  const { user } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
     getProducts()
@@ -107,6 +275,7 @@ export default function CatalogPage() {
       {modalAnnouncement && (
         <AnnouncementModal announcement={modalAnnouncement} onClose={closeModal} />
       )}
+      {recetaModal && <RecetaModal onClose={() => setRecetaModal(false)} />}
       <Navbar />
       {bannerAnnouncement && (
         <AnnouncementBanner announcement={bannerAnnouncement} onClose={closeBanner} />
@@ -124,7 +293,7 @@ export default function CatalogPage() {
           </p>
 
           {/* Search */}
-          <div className="relative max-w-xl mx-auto">
+          <div className="relative max-w-xl mx-auto mb-4">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
@@ -134,6 +303,15 @@ export default function CatalogPage() {
               className="w-full pl-12 pr-4 py-4 rounded-2xl text-gray-900 text-base shadow-lg focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
+
+          {/* Receta CTA */}
+          <button
+            onClick={() => user ? setRecetaModal(true) : router.push('/login')}
+            className="mt-4 inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/30 text-white text-sm font-medium px-5 py-2.5 rounded-full transition-colors"
+          >
+            <Pill className="w-4 h-4" />
+            ¿Solo tenés receta? Pedí sin agregar productos
+          </button>
         </div>
       </section>
 

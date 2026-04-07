@@ -212,13 +212,20 @@ function OrderCard({ order }) {
               </div>
             ))}
           </div>
-          <div className="border-t border-gray-100 pt-3 space-y-1">
-            {order.discountPercent > 0 && (
-              <div className="flex justify-between text-sm text-green-700">
-                <span>Descuento obra social ({order.discountPercent}%)</span>
+          {order.recetaDiscountApplied && order.discountAmount > 0 && (
+            <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-xl text-sm space-y-1">
+              <p className="font-semibold text-green-800">Descuento receta validada</p>
+              <div className="flex justify-between text-gray-600">
+                <span>Total original</span>
+                <span>{formatPrice(order.originalTotal ?? order.total)}</span>
+              </div>
+              <div className="flex justify-between text-green-700 font-medium">
+                <span>Descuento aplicado</span>
                 <span>- {formatPrice(order.discountAmount)}</span>
               </div>
-            )}
+            </div>
+          )}
+          <div className="border-t border-gray-100 pt-3 space-y-1">
             <div className="flex justify-between font-semibold">
               <span>Total</span>
               <span className="text-primary">{formatPrice(order.finalTotal ?? order.total)}</span>

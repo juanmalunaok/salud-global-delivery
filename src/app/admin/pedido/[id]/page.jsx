@@ -10,7 +10,7 @@ import Modal from '@/components/Modal'
 import { getOrder, subscribeToOrder, updateOrderStatus, updateOrder } from '@/lib/firestore'
 import {
   ChevronLeft, User, Phone, MapPin, Mail,
-  Link as LinkIcon, CheckCircle, Package, Truck, Star, XCircle,
+  Link as LinkIcon, CheckCircle, Package, Truck, Star, XCircle, X,
   Save, FileText, Store, Pill, Printer, MessageCircle
 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -167,6 +167,7 @@ export default function AdminOrderDetail() {
   const [recetaPaymentLink, setRecetaPaymentLink] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
+  const [editedItems, setEditedItems] = useState([])
 
   const fetchOrder = async () => {
     const data = await getOrder(id)
@@ -176,6 +177,7 @@ export default function AdminOrderDetail() {
       const prefillTotal = data.finalTotal ?? data.total
       setAdjustedTotal(prefillTotal?.toString() || '')
       setAdminNotes(data.adminNotes || '')
+      setEditedItems(data.items || [])
     }
     setLoading(false)
   }
@@ -218,11 +220,17 @@ export default function AdminOrderDetail() {
     }
     doAction(async () => {
       const finalPrice = parseFloat(adjustedTotal)
+      const originalTotal = order.total
+      const discountAmount = Math.max(0, originalTotal - finalPrice)
       await updateOrderStatus(id, 'presupuestado', {
         paymentLink: recetaPaymentLink.trim(),
         total: finalPrice,
         finalTotal: finalPrice,
         adjustedTotal: finalPrice,
+        originalTotal,
+        discountAmount,
+        recetaDiscountApplied: discountAmount > 0,
+        items: editedItems,
       })
       toast.success('Presupuesto enviado al cliente.')
     })
@@ -446,20 +454,55 @@ export default function AdminOrderDetail() {
                     <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="text-sm font-semibold text-green-800">Receta validada.</p>
-                      <p className="text-xs text-green-700 mt-0.5">Ingresá el precio con el descuento aplicado y el link de pago.</p>
+                      <p className="text-xs text-green-700 mt-0.5">Ajustá los productos, ingresá el precio con descuento y el link de pago.</p>
                     </div>
                   </div>
-                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm">
-                    <div className="flex justify-between text-gray-600 mb-1">
+
+                  {/* Editable items */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Productos incluidos en la receta</p>
+                    <div className="space-y-1.5">
+                      {editedItems.length === 0 && (
+                        <p className="text-xs text-gray-400 italic py-1">Sin productos — pedido solo por receta.</p>
+                      )}
+                      {editedItems.map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm">
+                          <div>
+                            <span className="text-gray-800 font-medium">{item.name}</span>
+                            <span className="text-gray-400 ml-1.5">x{item.quantity}</span>
+                          </div>
+                          <button
+                            onClick={() => setEditedItems(editedItems.filter((_, i) => i !== idx))}
+                            className="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-800 font-medium ml-3 flex-shrink-0"
+                            title="Mover a venta libre"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            Venta libre
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    {order.items?.length > editedItems.length && (
+                      <p className="text-xs text-orange-600 mt-1.5">
+                        {order.items.length - editedItems.length} producto{order.items.length - editedItems.length > 1 ? 's' : ''} movido{order.items.length - editedItems.length > 1 ? 's' : ''} a venta libre — el cliente deberá pedirlos por separado.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Original total + obra social */}
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm space-y-1">
+                    <div className="flex justify-between text-gray-600">
                       <span>Total original del pedido</span>
-                      <span className="font-medium">{formatPrice(order.total)}</span>
+                      <span className="font-semibold">{formatPrice(order.total)}</span>
                     </div>
                     {order.customerObraSocial && (
                       <p className="text-xs text-gray-400">Obra social: {order.customerObraSocial}</p>
                     )}
                   </div>
+
+                  {/* Final price */}
                   <div>
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
                       Precio final con descuento aplicado
                     </label>
                     <input
@@ -469,7 +512,14 @@ export default function AdminOrderDetail() {
                       placeholder="Ej: 15000"
                       className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                     />
+                    {adjustedTotal && !isNaN(parseFloat(adjustedTotal)) && parseFloat(adjustedTotal) < order.total && (
+                      <p className="text-xs text-green-700 mt-1">
+                        Descuento: {formatPrice(order.total - parseFloat(adjustedTotal))} ({Math.round((1 - parseFloat(adjustedTotal) / order.total) * 100)}% off)
+                      </p>
+                    )}
                   </div>
+
+                  {/* MP link */}
                   <div>
                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                       <LinkIcon className="w-4 h-4 text-gray-400" />
@@ -483,6 +533,7 @@ export default function AdminOrderDetail() {
                       className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                     />
                   </div>
+
                   <button
                     onClick={handleSendRecetaBudget}
                     disabled={actionLoading}
