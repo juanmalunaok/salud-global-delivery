@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import Modal from '@/components/Modal'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import OrderStatusBadge from '@/components/OrderStatusBadge'
-import { getAllProducts, createProduct, updateProduct, deleteProduct } from '@/lib/firestore'
-import { Plus, Pencil, Trash2, Search, Package, ToggleLeft, ToggleRight } from 'lucide-react'
+import { getAllProducts, createProduct, updateProduct, deleteProduct, uploadProductImage } from '@/lib/firestore'
+import { Plus, Pencil, Trash2, Search, Package, ToggleLeft, ToggleRight, ImagePlus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const CATEGORIES = [
@@ -42,7 +42,9 @@ export default function ProductosAdminPage() {
   const [editProduct, setEditProduct] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
-  const [deleteModal, setDeleteModal] = useState(null) // product to delete
+  const [deleteModal, setDeleteModal] = useState(null)
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
 
   const fetchProducts = async () => {
     const data = await getAllProducts()
@@ -55,6 +57,8 @@ export default function ProductosAdminPage() {
   const openCreate = () => {
     setEditProduct(null)
     setForm(EMPTY_FORM)
+    setImageFile(null)
+    setImagePreview(null)
     setModal(true)
   }
 
@@ -69,7 +73,22 @@ export default function ProductosAdminPage() {
       image: product.image || '',
       active: product.active !== false,
     })
+    setImageFile(null)
+    setImagePreview(product.image || null)
     setModal(true)
+  }
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
+  const clearImage = () => {
+    setImageFile(null)
+    setImagePreview(null)
+    setForm((f) => ({ ...f, image: '' }))
   }
 
   const handleSave = async () => {
@@ -77,13 +96,17 @@ export default function ProductosAdminPage() {
     if (!form.price || isNaN(parseFloat(form.price))) { toast.error('Ingresá un precio válido.'); return }
     setSaving(true)
     try {
+      let imageUrl = form.image
+      if (imageFile) {
+        imageUrl = await uploadProductImage(imageFile)
+      }
       const data = {
         name: form.name.trim(),
         description: form.description.trim(),
         category: form.category,
         price: parseFloat(form.price),
         stock: parseInt(form.stock) || 0,
-        image: form.image.trim(),
+        image: imageUrl,
         active: form.active,
       }
       if (editProduct) {
@@ -327,14 +350,26 @@ export default function ProductosAdminPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">URL de imagen</label>
-            <input
-              type="url"
-              value={form.image}
-              onChange={(e) => setForm({ ...form, image: e.target.value })}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              placeholder="https://..."
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Imagen del producto</label>
+            {imagePreview ? (
+              <div className="relative w-full h-40 rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                <img src={imagePreview} alt="Preview" className="w-full h-full object-contain" />
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  className="absolute top-2 right-2 bg-white border border-gray-200 rounded-full p-1 hover:bg-red-50 hover:border-red-300 transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-500" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                <ImagePlus className="w-8 h-8 text-gray-300 mb-2" />
+                <span className="text-sm text-gray-400">Hacé click para subir una imagen</span>
+                <span className="text-xs text-gray-300 mt-1">JPG, PNG, WEBP</span>
+                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              </label>
+            )}
           </div>
 
           <div className="flex gap-3 pt-2">

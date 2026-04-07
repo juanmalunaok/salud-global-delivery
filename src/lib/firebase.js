@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
 import { getAuth } from 'firebase/auth'
+import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.trim(),
@@ -11,16 +12,16 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID?.trim(),
 }
 
-let app, db, auth
+let app, db, auth, storage
 
 try {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
   db = getFirestore(app)
   auth = getAuth(app)
+  storage = getStorage(app)
 } catch (e) {
-  // Will fail gracefully if env vars are not set (e.g. during static build without .env.local)
   console.warn('Firebase initialization skipped (missing env vars)')
 }
 
-export { db, auth }
+export { db, auth, storage }
 export default app

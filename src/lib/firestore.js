@@ -13,7 +13,19 @@ import {
   serverTimestamp,
   onSnapshot,
 } from 'firebase/firestore'
-import { db } from './firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db, storage } from './firebase'
+
+// ───────────────────────────────────────────────
+// STORAGE
+// ───────────────────────────────────────────────
+export async function uploadProductImage(file) {
+  const ext = file.name.split('.').pop()
+  const path = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const storageRef = ref(storage, path)
+  await uploadBytes(storageRef, file)
+  return getDownloadURL(storageRef)
+}
 
 // ───────────────────────────────────────────────
 // USERS
