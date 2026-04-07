@@ -11,7 +11,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { createOrder, getPickupDate } from '@/lib/firestore'
-import { ShoppingBag, Trash2, Plus, Minus, ChevronLeft, FileText, MapPin, Truck, Store, CalendarClock } from 'lucide-react'
+import { ShoppingBag, Trash2, Plus, Minus, ChevronLeft, FileText, MapPin, Truck, Store, CalendarClock, Pill, ClipboardList } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const BRANCHES = [
@@ -35,11 +35,19 @@ function CartContent() {
   const [submitting, setSubmitting] = useState(false)
   const [deliveryType, setDeliveryType] = useState('delivery')
   const [branch, setBranch] = useState('')
+  const [orderType, setOrderType] = useState('venta_libre')
+  const [customPickupDate, setCustomPickupDate] = useState('')
+
+  const todayStr = new Date().toISOString().split('T')[0]
 
   const handleConfirm = async () => {
     if (items.length === 0) return
     if (deliveryType === 'pickup' && !branch) {
       toast.error('Seleccioná una sucursal para el retiro.')
+      return
+    }
+    if (deliveryType === 'pickup' && orderType === 'con_receta' && !customPickupDate) {
+      toast.error('Seleccioná la fecha de retiro.')
       return
     }
     setSubmitting(true)
@@ -51,7 +59,9 @@ function CartContent() {
         customerAddress: userDoc?.address || '',
         customerNotes: notes,
         deliveryType,
+        orderType,
         branch: deliveryType === 'pickup' ? branch : null,
+        customPickupDate: deliveryType === 'pickup' && orderType === 'con_receta' ? customPickupDate : null,
         items: items.map((i) => ({
           productId: i.productId,
           name: i.name,
@@ -132,6 +142,45 @@ function CartContent() {
           </div>
         ))}
 
+        {/* Order type - prescription or OTC */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+          <p className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-gray-400" />
+            Tipo de medicación
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => { setOrderType('venta_libre'); setCustomPickupDate('') }}
+              className={`flex flex-col items-center gap-1.5 py-3 px-4 rounded-xl border-2 transition-all text-sm font-medium ${
+                orderType === 'venta_libre'
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-gray-200 text-gray-500 hover:border-gray-300'
+              }`}
+            >
+              <ShoppingBag className="w-5 h-5" />
+              Venta libre
+            </button>
+            <button
+              type="button"
+              onClick={() => setOrderType('con_receta')}
+              className={`flex flex-col items-center gap-1.5 py-3 px-4 rounded-xl border-2 transition-all text-sm font-medium ${
+                orderType === 'con_receta'
+                  ? 'border-amber-500 bg-amber-50 text-amber-700'
+                  : 'border-gray-200 text-gray-500 hover:border-gray-300'
+              }`}
+            >
+              <Pill className="w-5 h-5" />
+              Con receta médica
+            </button>
+          </div>
+          {orderType === 'con_receta' && (
+            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+              Podés traer la receta a la sucursal o enviarla por WhatsApp al momento de coordinar el pedido.
+            </div>
+          )}
+        </div>
+
         {/* Delivery type */}
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <p className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
@@ -186,14 +235,31 @@ function CartContent() {
                   ))}
                 </div>
               </div>
-              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                <CalendarClock className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+              {orderType === 'con_receta' ? (
                 <div>
-                  <p className="text-xs font-semibold text-blue-800">Fecha estimada de retiro:</p>
-                  <p className="text-sm text-blue-700 font-medium capitalize">{getPickupDate().label}</p>
-                  <p className="text-xs text-blue-600 mt-0.5">Los retiros son martes y jueves. Pedidos antes de las 11 hs se retiran el mismo día.</p>
+                  <p className="text-xs font-medium text-gray-600 mb-1.5 flex items-center gap-1">
+                    <CalendarClock className="w-3.5 h-3.5" />
+                    Fecha de retiro con receta *
+                  </p>
+                  <input
+                    type="date"
+                    min={todayStr}
+                    value={customPickupDate}
+                    onChange={(e) => setCustomPickupDate(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Los pedidos con receta se despachan el día que elegís.</p>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                  <CalendarClock className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-semibold text-blue-800">Fecha estimada de retiro:</p>
+                    <p className="text-sm text-blue-700 font-medium capitalize">{getPickupDate().label}</p>
+                    <p className="text-xs text-blue-600 mt-0.5">Los retiros son martes y jueves. Pedidos antes de las 11 hs se retiran el mismo día.</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

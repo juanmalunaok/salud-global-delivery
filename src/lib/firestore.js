@@ -148,9 +148,15 @@ export async function createOrder(userId, orderData) {
   let pickupDateISO = null
   let pickupDateLabel = null
   if (orderData.deliveryType === 'pickup') {
-    const { date, label } = getPickupDate(new Date())
-    pickupDateISO = date.toISOString()
-    pickupDateLabel = label
+    if (orderData.orderType === 'con_receta' && orderData.customPickupDate) {
+      const d = new Date(orderData.customPickupDate + 'T00:00:00')
+      pickupDateISO = d.toISOString()
+      pickupDateLabel = d.toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: 'long' })
+    } else {
+      const { date, label } = getPickupDate(new Date())
+      pickupDateISO = date.toISOString()
+      pickupDateLabel = label
+    }
   }
 
   const ref = await addDoc(collection(db, 'orders'), {

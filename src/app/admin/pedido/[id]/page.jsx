@@ -11,7 +11,7 @@ import { getOrder, updateOrderStatus, updateOrder } from '@/lib/firestore'
 import {
   ChevronLeft, User, Phone, MapPin, Mail, MessageSquare,
   Link as LinkIcon, CheckCircle, Package, Truck, Star, XCircle,
-  Save, FileText, Store
+  Save, FileText, Store, Pill
 } from 'lucide-react'
 
 const BRANCH_LABELS = { ac: 'AC', juncal: 'Juncal', fondo: 'Fondo', libertador: 'Libertador', cervino: 'Cerviño', santa_fe: 'Santa Fe' }
@@ -371,6 +371,19 @@ export default function AdminOrderDetail() {
                 <div>
                   <p className="text-xs text-gray-500">Dirección</p>
                   <p className="text-sm text-gray-900">{order.customerAddress || '—'}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Pill className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-xs text-gray-500">Tipo de medicación</p>
+                  {order.orderType === 'con_receta' ? (
+                    <span className="inline-flex items-center gap-1 text-sm font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                      <Pill className="w-3 h-3" /> Con receta médica
+                    </span>
+                  ) : (
+                    <p className="text-sm text-gray-900">Venta libre</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-start gap-2">
