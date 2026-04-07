@@ -312,16 +312,16 @@ export default function CatalogPage() {
         <div className="max-w-3xl mx-auto">
           <button
             onClick={() => user ? setRecetaModal(true) : router.push('/login')}
-            className="w-full flex items-center gap-5 bg-white hover:bg-amber-50 border-2 border-amber-400 hover:border-amber-500 rounded-2xl px-6 py-5 shadow-sm transition-all group"
+            className="w-full flex flex-col sm:flex-row items-center gap-4 bg-white hover:bg-amber-50 border-2 border-amber-400 hover:border-amber-500 rounded-2xl px-6 py-5 shadow-sm transition-all group text-center sm:text-left"
           >
             <div className="w-14 h-14 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-amber-200 transition-colors">
               <Pill className="w-8 h-8 text-amber-600" />
             </div>
-            <div className="text-left flex-1">
+            <div className="flex-1">
               <p className="text-lg font-bold text-gray-900 leading-snug">¿Ya tenés receta médica?</p>
-              <p className="text-base text-gray-500 mt-0.5">Creá tu pedido directamente, sin agregar productos al carrito</p>
+              <p className="text-sm text-gray-500 mt-0.5">Creá tu pedido directamente, sin agregar productos al carrito</p>
             </div>
-            <div className="flex-shrink-0 bg-amber-500 hover:bg-amber-600 text-white font-bold text-base px-5 py-2.5 rounded-xl transition-colors">
+            <div className="w-full sm:w-auto flex-shrink-0 bg-amber-500 text-white font-bold text-base px-5 py-3 rounded-xl transition-colors">
               Pedir con receta
             </div>
           </button>
