@@ -10,7 +10,7 @@ import OrderStatusBadge from '@/components/OrderStatusBadge'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAuth } from '@/contexts/AuthContext'
 import { subscribeToUserOrders, updateOrder, createNotification, ADMIN_EMAIL } from '@/lib/firestore'
-import { Package, ChevronDown, ChevronUp, ExternalLink, ShoppingBag, Store, Truck, CalendarClock, Mail, CheckCircle2 } from 'lucide-react'
+import { Package, ChevronDown, ChevronUp, ExternalLink, ShoppingBag, Store, Truck, CalendarClock, Mail, CheckCircle2, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const BRANCH_LABELS = { ac: 'AC', juncal: 'Juncal', fondo: 'Fondo', libertador: 'Libertador', cervino: 'Cerviño', santa_fe: 'Santa Fe' }
@@ -143,6 +143,25 @@ function OrderCard({ order }) {
           </div>
         </div>
       </button>
+
+      {/* Cancellation notice */}
+      {order.status === 'cancelado' && (
+        <div className="mx-5 mb-4 p-4 bg-red-50 border border-red-200 rounded-xl space-y-2">
+          <p className="text-sm font-bold text-red-800 flex items-center gap-1.5">
+            <XCircle className="w-4 h-4 flex-shrink-0" /> Pedido cancelado
+          </p>
+          {order.cancelReason && (
+            <p className="text-sm text-red-700">
+              <span className="font-medium">Motivo:</span> {order.cancelReason}
+            </p>
+          )}
+          <p className="text-sm text-red-700">
+            {order.hadPayment
+              ? 'Si realizaste un pago, un asesor de Salud Global se va a comunicar con vos para hacer efectivo el reintegro.'
+              : 'Si tenés alguna consulta, comunicate con la farmacia.'}
+          </p>
+        </div>
+      )}
 
       {/* Recipe CTA */}
       {order.status === 'esperando_receta' && (
