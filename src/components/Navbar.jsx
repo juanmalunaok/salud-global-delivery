@@ -1,9 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { ShoppingCart, User, ChevronDown, LogOut, Package, LayoutDashboard } from 'lucide-react'
+import { ShoppingCart, Cross, User, ChevronDown, LogOut, Package, LayoutDashboard } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCart } from '@/contexts/CartContext'
@@ -35,15 +34,14 @@ export default function Navbar() {
     <header className="sticky top-0 z-30 bg-primary shadow-md">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center flex-shrink-0">
-          <Image
-            src="/logo.png"
-            alt="Salud Global Farmacias"
-            width={160}
-            height={56}
-            className="h-12 w-auto object-contain brightness-0 invert"
-            priority
-          />
+        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+            <Cross className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <p className="font-bold text-white leading-none font-heading text-lg">Salud Global</p>
+            <p className="text-white/70 text-xs leading-none">Farmacia y Perfumería</p>
+          </div>
         </Link>
 
         {/* Right actions */}
