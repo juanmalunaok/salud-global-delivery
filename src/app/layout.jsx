@@ -13,8 +13,8 @@ export const metadata = {
     title: 'Salud Global',
   },
   icons: {
-    icon: '/icon.png',
-    apple: '/icon.png',
+    icon: '/icon-192.png',
+    apple: '/apple-touch-icon.png',
   },
 }
 
@@ -26,7 +26,7 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Salud Global" />
-        <link rel="apple-touch-icon" href="/icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
       </head>
       <body className="bg-white text-gray-900 font-body">
         <AuthProvider>
