@@ -32,7 +32,8 @@ export async function uploadProductImage(file) {
 // USERS
 // ───────────────────────────────────────────────
 
-export const ADMIN_EMAIL = 'juanma.lunaok@gmail.com'
+export const ADMIN_EMAILS = ['juanma.lunaok@gmail.com', 'joserodrigovcorilla@gmail.com']
+export const ADMIN_EMAIL = ADMIN_EMAILS[0]
 
 export async function getUserDoc(uid) {
   const snap = await getDoc(doc(db, 'users', uid))
@@ -40,7 +41,7 @@ export async function getUserDoc(uid) {
 }
 
 export async function createUserDoc(uid, { email, name, photoURL }) {
-  const role = email === ADMIN_EMAIL ? 'admin' : 'customer'
+  const role = ADMIN_EMAILS.includes(email) ? 'admin' : 'customer'
   await setDoc(doc(db, 'users', uid), {
     email,
     name: name || '',

@@ -69,7 +69,7 @@ Abrir [http://localhost:3000](http://localhost:3000).
 
 ## Admin
 
-El usuario con email `juanma.lunaok@gmail.com` es el admin predeterminado. Cuando inicia sesión con Google por primera vez, su documento en `/users` se crea automáticamente con `role: "admin"`.
+Los usuarios con email `juanma.lunaok@gmail.com` y `joserodrigovcorilla@gmail.com` son admins predeterminados. Cuando inician sesión con Google por primera vez, su documento en `/users` se crea automáticamente con `role: "admin"`.
 
 Para cargar productos de prueba: ingresar al admin → botón **"Cargar productos de prueba"** en el dashboard.
 
